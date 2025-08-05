@@ -43,9 +43,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Configure Entity Framework and SQL Server
+// Configure Entity Framework - Use SQLite for production, SQL Server for development
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? 
+                      builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<TravelDeskContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    // Use SQLite for production (Render deployment), SQL Server for development
+    if (builder.Environment.IsDevelopment())
+    {
+        options.UseSqlServer(connectionString);
+    }
+    else
+    {
+        // Use SQLite for production (Render deployment)
+        options.UseSqlite("Data Source=traveldesk.db");
+    }
+});
 
 // Add CORS support
 builder.Services.AddCors(options =>
