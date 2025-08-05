@@ -84,6 +84,33 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TravelDeskContext>();
     context.Database.EnsureCreated();
+    
+    // Add sample data for SQLite (production)
+    if (!builder.Environment.IsDevelopment() && !context.Users.Any())
+    {
+        // Add IT department
+        var itDept = new Department { DepartmentName = "IT", IsActive = true };
+        context.Departments.Add(itDept);
+        
+        // Add Admin role
+        var adminRole = new Role { RoleName = "Admin", IsActive = true };
+        context.Roles.Add(adminRole);
+        
+        // Add admin user
+        var adminUser = new User 
+        { 
+            FirstName = "Admin", 
+            LastName = "User", 
+            Email = "work.sushanparlapally@gmail.com", 
+            Password = "sushan@123", 
+            Role = admin,
+            Department = itDept,
+            IsActive = true
+        };
+        context.Users.Add(adminUser);
+        
+        context.SaveChanges();
+    }
 }
 
 
