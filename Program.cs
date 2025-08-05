@@ -79,6 +79,13 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 builder.Services.AddScoped<IEmailService, EmailService>(); // Register the EmailService with IEmailService
 var app = builder.Build();
 
+// Initialize database
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<TravelDeskContext>();
+    context.Database.EnsureCreated();
+}
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
