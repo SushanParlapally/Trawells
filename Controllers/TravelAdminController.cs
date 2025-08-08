@@ -27,12 +27,14 @@ namespace TravelDesk.Controllers
         private readonly TravelDeskContext _context;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
+        private readonly ISupabaseStorageService _supabaseStorageService;
 
-        public TravelAdminController(TravelDeskContext context, IEmailService emailService, IConfiguration configuration)
+        public TravelAdminController(TravelDeskContext context, IEmailService emailService, IConfiguration configuration, ISupabaseStorageService supabaseStorageService)
         {
             _context = context;
             _emailService = emailService;
             _configuration = configuration;
+            _supabaseStorageService = supabaseStorageService;
         }
 
         //        [HttpGet("GetAllRequests")]
@@ -435,7 +437,17 @@ namespace TravelDesk.Controllers
                     return BadRequest("Ticket is not yet booked. Only booked tickets can be downloaded.");
                 }
 
-                // Generate the PDF (same logic as the authenticated endpoint)
+                // Check if we have a Supabase URL stored
+                if (!string.IsNullOrEmpty(travelRequest.TicketUrl))
+                {
+                    // Return the Supabase download URL
+                    return Ok(new { 
+                        downloadUrl = travelRequest.TicketUrl,
+                        message = "PDF available for download from Supabase Storage"
+                    });
+                }
+
+                // If no Supabase URL, generate the PDF and upload to Supabase
                 return await GeneratePdfDocument(travelRequest);
             }
             catch (Exception ex)
@@ -466,24 +478,30 @@ namespace TravelDesk.Controllers
                     return BadRequest("Ticket is not yet booked. Only booked tickets can be downloaded.");
                 }
 
-                // Generate a secure token (you can implement a more sophisticated token system)
-                var token = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"ticket_{travelRequestId}_{DateTime.UtcNow.Ticks}"));
-                
-                // Get the base URL from configuration
-                var baseUrl = _configuration["AppSettings:BaseUrl"] ?? 
-                             _configuration["AppSettings:ApiBaseUrl"] ?? 
-                             $"{Request.Scheme}://{Request.Host}";
-                
-                baseUrl = baseUrl.TrimEnd('/');
-                
-                // Create secure download link
-                var secureDownloadUrl = $"{baseUrl}/api/travel-requests/{travelRequestId}/download-ticket?token={token}";
-                
-                return Ok(new { 
-                    downloadUrl = secureDownloadUrl,
-                    expiresAt = DateTime.UtcNow.AddHours(24), // Link expires in 24 hours
-                    message = "Secure download link generated successfully"
-                });
+                // Check if we have a Supabase URL stored
+                if (!string.IsNullOrEmpty(travelRequest.TicketUrl))
+                {
+                    // Return the Supabase download URL directly
+                    return Ok(new { 
+                        downloadUrl = travelRequest.TicketUrl,
+                        expiresAt = DateTime.UtcNow.AddHours(24), // Link expires in 24 hours
+                        message = "Secure download link generated successfully from Supabase Storage"
+                    });
+                }
+
+                // If no Supabase URL, generate the PDF and upload to Supabase first
+                var pdfResult = await GeneratePdfDocument(travelRequest);
+                if (pdfResult is OkObjectResult okResult)
+                {
+                    var resultData = okResult.Value as dynamic;
+                    return Ok(new { 
+                        downloadUrl = resultData.downloadUrl,
+                        expiresAt = DateTime.UtcNow.AddHours(24),
+                        message = "PDF generated and uploaded to Supabase Storage"
+                    });
+                }
+
+                return BadRequest("Failed to generate PDF and upload to Supabase Storage");
             }
             catch (Exception ex)
             {
@@ -526,7 +544,7 @@ namespace TravelDesk.Controllers
         }
 
         /// <summary>
-        /// Generates a PDF document for a travel request
+        /// Generates a PDF document for a travel request and uploads it to Firebase Storage
         /// </summary>
         private async Task<IActionResult> GeneratePdfDocument(TravelRequest travelRequest)
         {
@@ -534,6 +552,8 @@ namespace TravelDesk.Controllers
             {
                 // Create PDF filename
                 var pdfFileName = $"TravelRequest_{travelRequest.TravelRequestId}.pdf";
+                byte[] pdfBytes;
+                
                 using (var stream = new MemoryStream())
                 {
                     // Create PDF document with page size and margins
@@ -637,9 +657,30 @@ namespace TravelDesk.Controllers
 
                     // Reset stream position to the start
                     stream.Position = 0;
+                    pdfBytes = stream.ToArray();
+                }
 
-                    // Return the generated PDF as a downloadable file
-                    return File(stream.ToArray(), "application/pdf", pdfFileName);
+                // Upload PDF to Supabase Storage
+                try
+                {
+                    var downloadUrl = await _supabaseStorageService.UploadPdfAsync(pdfBytes, pdfFileName);
+                    
+                    // Update the travel request with the Supabase download URL
+                    travelRequest.TicketUrl = downloadUrl;
+                    await _context.SaveChangesAsync();
+                    
+                    // Return the Supabase download URL instead of the file
+                    return Ok(new { 
+                        message = "PDF generated and uploaded successfully", 
+                        downloadUrl = downloadUrl,
+                        fileName = pdfFileName
+                    });
+                }
+                catch (Exception supabaseEx)
+                {
+                    Console.WriteLine($"Supabase upload failed: {supabaseEx.Message}");
+                    // Fallback: return the PDF as a file download
+                    return File(pdfBytes, "application/pdf", pdfFileName);
                 }
             }
             catch (Exception ex)

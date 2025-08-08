@@ -10,12 +10,34 @@ using System.Text.Json.Serialization;
 using TravelDesk.Interface;
 using TravelDesk.Models;
 using TravelDesk.Service;
+using TravelDesk.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Render.io compatibility
 var port = Environment.GetEnvironmentVariable("PORT") ?? "7075";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
+// Initialize Supabase Client
+try
+{
+    var supabaseConfig = builder.Configuration.GetSection("Supabase");
+    var url = supabaseConfig["Url"];
+    var key = supabaseConfig["Key"];
+    
+    if (!string.IsNullOrEmpty(url) && !string.IsNullOrEmpty(key))
+    {
+        Console.WriteLine("Supabase configuration found. Storage features will be available.");
+    }
+    else
+    {
+        Console.WriteLine("Supabase configuration is missing. Storage features will be disabled.");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Supabase initialization failed: {ex.Message}");
+}
 
 // Add services to the container.
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -43,23 +65,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Configure Entity Framework - Use SQLite for production, SQL Server for development
+// Configure Entity Framework - Use PostgreSQL for production, SQLite for development
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? 
                       builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<TravelDeskContext>(options =>
 {
-    // Use SQLite for production (Render deployment), SQL Server for development
-    if (builder.Environment.IsDevelopment())
+    // Force PostgreSQL for Supabase testing
+    var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+    Console.WriteLine($"Environment variable ASPNETCORE_ENVIRONMENT = {env}");
+    
+    // Always use PostgreSQL for now to test Supabase
+    options.UseNpgsql(connectionString, npgsqlOptions =>
     {
-        options.UseSqlServer(connectionString);
-    }
-    else
-    {
-        // Use SQLite for production (Render deployment)
-        options.UseSqlite("Data Source=traveldesk.db");
-    }
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorCodesToAdd: null);
+        npgsqlOptions.CommandTimeout(120);
+    });
+    Console.WriteLine($"Using PostgreSQL (Supabase) with connection: {connectionString}");
 });
+
+// Add Supabase Storage Service
+builder.Services.AddScoped<ISupabaseStorageService, SupabaseStorageService>();
 
 // Add CORS support
 builder.Services.AddCors(options =>
@@ -72,11 +101,10 @@ builder.Services.AddCors(options =>
     });
 });
 
-
-
 // Configure Email Service
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>(); // Register the EmailService with IEmailService
+
 var app = builder.Build();
 
 // Initialize database
@@ -85,8 +113,8 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<TravelDeskContext>();
     context.Database.EnsureCreated();
     
-    // Add sample data for SQLite (production)
-    if (!builder.Environment.IsDevelopment() && !context.Users.Any())
+    // Add sample data for SQLite (development)
+    if (builder.Environment.IsDevelopment() && !context.Users.Any())
     {
         // Add IT department
         var itDept = new Department { DepartmentName = "IT", IsActive = true };
@@ -103,7 +131,7 @@ using (var scope = app.Services.CreateScope())
             LastName = "User", 
             Email = "work.sushanparlapally@gmail.com", 
             Password = "sushan@123", 
-            Role = admin,
+            Role = adminRole,
             Department = itDept,
             IsActive = true
         };
@@ -112,7 +140,6 @@ using (var scope = app.Services.CreateScope())
         context.SaveChanges();
     }
 }
-
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
