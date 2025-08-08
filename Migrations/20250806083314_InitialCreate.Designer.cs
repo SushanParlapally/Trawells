@@ -2,9 +2,9 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TravelDesk.Data;
 
 #nullable disable
@@ -12,8 +12,8 @@ using TravelDesk.Data;
 namespace TravelDesk.Migrations
 {
     [DbContext(typeof(TravelDeskContext))]
-    [Migration("20240904132934_kl")]
-    partial class kl
+    [Migration("20250806083314_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,37 +21,37 @@ namespace TravelDesk.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.8")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("TravelDesk.Models.Department", b =>
                 {
                     b.Property<int>("DepartmentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DepartmentId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DepartmentId"));
 
                     b.Property<int>("CreatedBy")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DepartmentName")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ModifiedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("DepartmentId");
 
@@ -62,7 +62,7 @@ namespace TravelDesk.Migrations
                         {
                             DepartmentId = 1,
                             CreatedBy = 1,
-                            CreatedOn = new DateTime(2024, 9, 4, 18, 59, 33, 839, DateTimeKind.Local).AddTicks(3047),
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9591),
                             DepartmentName = "IT",
                             IsActive = true
                         },
@@ -70,7 +70,7 @@ namespace TravelDesk.Migrations
                         {
                             DepartmentId = 2,
                             CreatedBy = 1,
-                            CreatedOn = new DateTime(2024, 9, 4, 18, 59, 33, 839, DateTimeKind.Local).AddTicks(3049),
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9593),
                             DepartmentName = "HR",
                             IsActive = true
                         },
@@ -78,7 +78,7 @@ namespace TravelDesk.Migrations
                         {
                             DepartmentId = 3,
                             CreatedBy = 1,
-                            CreatedOn = new DateTime(2024, 9, 4, 18, 59, 33, 839, DateTimeKind.Local).AddTicks(3050),
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9594),
                             DepartmentName = "Admin",
                             IsActive = true
                         },
@@ -86,7 +86,7 @@ namespace TravelDesk.Migrations
                         {
                             DepartmentId = 4,
                             CreatedBy = 1,
-                            CreatedOn = new DateTime(2024, 9, 4, 18, 59, 33, 839, DateTimeKind.Local).AddTicks(3052),
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9596),
                             DepartmentName = "Travel",
                             IsActive = true
                         });
@@ -96,29 +96,29 @@ namespace TravelDesk.Migrations
                 {
                     b.Property<int>("ProjectId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProjectId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProjectId"));
 
                     b.Property<int>("CreatedBy")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ModifiedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ProjectName")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("ProjectId");
 
@@ -129,7 +129,7 @@ namespace TravelDesk.Migrations
                         {
                             ProjectId = 1,
                             CreatedBy = 1,
-                            CreatedOn = new DateTime(2024, 9, 4, 18, 59, 33, 839, DateTimeKind.Local).AddTicks(3081),
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9668),
                             IsActive = true,
                             ProjectName = "Project Alpha"
                         },
@@ -137,7 +137,7 @@ namespace TravelDesk.Migrations
                         {
                             ProjectId = 2,
                             CreatedBy = 1,
-                            CreatedOn = new DateTime(2024, 9, 4, 18, 59, 33, 839, DateTimeKind.Local).AddTicks(3082),
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9670),
                             IsActive = true,
                             ProjectName = "Project Beta"
                         },
@@ -145,7 +145,7 @@ namespace TravelDesk.Migrations
                         {
                             ProjectId = 3,
                             CreatedBy = 1,
-                            CreatedOn = new DateTime(2024, 9, 4, 18, 59, 33, 839, DateTimeKind.Local).AddTicks(3084),
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9671),
                             IsActive = true,
                             ProjectName = "Project Gamma"
                         });
@@ -155,29 +155,29 @@ namespace TravelDesk.Migrations
                 {
                     b.Property<int>("RoleId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoleId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RoleId"));
 
                     b.Property<int>("CreatedBy")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ModifiedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("RoleName")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("RoleId");
 
@@ -188,7 +188,7 @@ namespace TravelDesk.Migrations
                         {
                             RoleId = 1,
                             CreatedBy = 1,
-                            CreatedOn = new DateTime(2024, 9, 4, 18, 59, 33, 839, DateTimeKind.Local).AddTicks(2880),
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9414),
                             IsActive = true,
                             RoleName = "Admin"
                         },
@@ -196,7 +196,7 @@ namespace TravelDesk.Migrations
                         {
                             RoleId = 2,
                             CreatedBy = 1,
-                            CreatedOn = new DateTime(2024, 9, 4, 18, 59, 33, 839, DateTimeKind.Local).AddTicks(2882),
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9416),
                             IsActive = true,
                             RoleName = "TravelAdmin"
                         },
@@ -204,7 +204,7 @@ namespace TravelDesk.Migrations
                         {
                             RoleId = 3,
                             CreatedBy = 1,
-                            CreatedOn = new DateTime(2024, 9, 4, 18, 59, 33, 839, DateTimeKind.Local).AddTicks(2883),
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9417),
                             IsActive = true,
                             RoleName = "Manager"
                         },
@@ -212,7 +212,7 @@ namespace TravelDesk.Migrations
                         {
                             RoleId = 4,
                             CreatedBy = 1,
-                            CreatedOn = new DateTime(2024, 9, 4, 18, 59, 33, 839, DateTimeKind.Local).AddTicks(2885),
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9419),
                             IsActive = true,
                             RoleName = "Employee"
                         });
@@ -222,55 +222,55 @@ namespace TravelDesk.Migrations
                 {
                     b.Property<int>("TravelRequestId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TravelRequestId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TravelRequestId"));
 
                     b.Property<string>("Comments")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("DepartmentId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("FromDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("FromLocation")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("ModifiedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("ProjectId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("ReasonForTravel")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("TicketUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("ToDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ToLocation")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("TravelRequestId");
 
@@ -287,60 +287,60 @@ namespace TravelDesk.Migrations
                 {
                     b.Property<int>("UserId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserId"));
 
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("CreatedBy")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("DepartmentId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("LastName")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int?>("ManagerId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("MobileNum")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ModifiedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("RoleId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("UserId");
 
@@ -351,12 +351,77 @@ namespace TravelDesk.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = 1,
+                            Address = "123 Admin Street",
+                            CreatedBy = 1,
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9700),
+                            DepartmentId = 3,
+                            Email = "admin@traveldesk.com",
+                            FirstName = "Admin",
+                            IsActive = true,
+                            LastName = "User",
+                            MobileNum = "1234567890",
+                            Password = "admin123",
+                            RoleId = 1
+                        },
+                        new
+                        {
+                            UserId = 2,
+                            Address = "456 Travel Street",
+                            CreatedBy = 1,
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9703),
+                            DepartmentId = 4,
+                            Email = "traveladmin@traveldesk.com",
+                            FirstName = "Travel",
+                            IsActive = true,
+                            LastName = "Admin",
+                            ManagerId = 1,
+                            MobileNum = "2345678901",
+                            Password = "travel123",
+                            RoleId = 2
+                        },
+                        new
+                        {
+                            UserId = 3,
+                            Address = "789 Manager Street",
+                            CreatedBy = 1,
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9705),
+                            DepartmentId = 1,
+                            Email = "manager@traveldesk.com",
+                            FirstName = "Manager",
+                            IsActive = true,
+                            LastName = "User",
+                            ManagerId = 1,
+                            MobileNum = "3456789012",
+                            Password = "manager123",
+                            RoleId = 3
+                        },
+                        new
+                        {
+                            UserId = 4,
+                            Address = "321 Employee Street",
+                            CreatedBy = 1,
+                            CreatedOn = new DateTime(2025, 8, 6, 14, 3, 13, 715, DateTimeKind.Utc).AddTicks(9708),
+                            DepartmentId = 1,
+                            Email = "employee@traveldesk.com",
+                            FirstName = "Employee",
+                            IsActive = true,
+                            LastName = "User",
+                            ManagerId = 3,
+                            MobileNum = "4567890123",
+                            Password = "employee123",
+                            RoleId = 4
+                        });
                 });
 
             modelBuilder.Entity("TravelDesk.Models.TravelRequest", b =>
                 {
                     b.HasOne("TravelDesk.Models.Department", "Department")
-                        .WithMany()
+                        .WithMany("TravelRequests")
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -367,7 +432,7 @@ namespace TravelDesk.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("User", "User")
+                    b.HasOne("User", "UserName")
                         .WithMany("TravelRequests")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -377,7 +442,7 @@ namespace TravelDesk.Migrations
 
                     b.Navigation("Project");
 
-                    b.Navigation("User");
+                    b.Navigation("UserName");
                 });
 
             modelBuilder.Entity("User", b =>
@@ -408,6 +473,8 @@ namespace TravelDesk.Migrations
 
             modelBuilder.Entity("TravelDesk.Models.Department", b =>
                 {
+                    b.Navigation("TravelRequests");
+
                     b.Navigation("Users");
                 });
 
