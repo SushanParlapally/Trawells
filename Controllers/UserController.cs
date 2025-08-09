@@ -52,9 +52,21 @@ namespace TravekDesk.Controllers
                 return BadRequest(ModelState);
             }
 
-            _context.Users.Add(user);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(GetUsers), new { id = user.UserId }, user);
+            try
+            {
+                // Ensure required fields are set
+                user.CreatedBy = user.CreatedBy == 0 ? 1 : user.CreatedBy;
+                user.CreatedOn = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+                user.IsActive = true;
+
+                _context.Users.Add(user);
+                _context.SaveChanges();
+                return CreatedAtAction(nameof(GetUsers), new { id = user.UserId }, user);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         [HttpPut("users/{id}")]
