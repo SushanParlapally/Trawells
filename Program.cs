@@ -21,7 +21,7 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 // Initialize Supabase Client
 try
 {
-    var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_URL") ?? builder.Configuration["Supabase:Url"];
+    var supabaseUrl = builder.Configuration["Supabase:Url"]; // Not sensitive, can use config
     var supabaseKey = Environment.GetEnvironmentVariable("SUPABASE_ANON_KEY") ?? builder.Configuration["Supabase:Key"];
     
     if (!string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey))
@@ -50,8 +50,8 @@ builder.Services.AddSwaggerGen();
 
 // Configure JWT Authentication
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"];
-var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["Jwt:Issuer"];
-var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["Jwt:Audience"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]; // Not sensitive, can use config
+var jwtAudience = builder.Configuration["Jwt:Audience"]; // Not sensitive, can use config
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
