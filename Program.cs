@@ -155,9 +155,9 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Add a simple health check endpoint
-app.MapGet("/", () => "TravelDesk API is running! Visit /swagger for API documentation.");
-app.MapGet("/health", () => new { status = "healthy", timestamp = DateTime.UtcNow });
+// Add a simple health check endpoint that supports both GET and HEAD
+app.MapMethods("/", new[] { "GET", "HEAD" }, () => "TravelDesk API is running! Visit /swagger for API documentation.");
+app.MapMethods("/health", new[] { "GET", "HEAD" }, () => new { status = "healthy", timestamp = DateTime.UtcNow });
 
 // Use CORS before other middleware
 app.UseCors();
