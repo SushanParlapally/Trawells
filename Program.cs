@@ -151,11 +151,13 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Enable Swagger in all environments for API documentation
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// Add a simple health check endpoint
+app.MapGet("/", () => "TravelDesk API is running! Visit /swagger for API documentation.");
+app.MapGet("/health", () => new { status = "healthy", timestamp = DateTime.UtcNow });
 
 // Use CORS before other middleware
 app.UseCors();
