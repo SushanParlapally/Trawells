@@ -72,6 +72,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? 
                       builder.Configuration.GetConnectionString("DefaultConnection");
 
+// Fix common connection string issues
+if (!string.IsNullOrEmpty(connectionString))
+{
+    // Fix incomplete sslmode parameter
+    if (connectionString.Contains("?sslmode") && !connectionString.Contains("sslmode="))
+    {
+        connectionString = connectionString.Replace("?sslmode", "?sslmode=require");
+    }
+    
+    // Ensure proper SSL mode for Supabase
+    if (!connectionString.Contains("sslmode=") && connectionString.Contains("supabase.com"))
+    {
+        connectionString += connectionString.Contains("?") ? "&sslmode=require" : "?sslmode=require";
+    }
+}
+
 builder.Services.AddDbContext<TravelDeskContext>(options =>
 {
     // Force PostgreSQL for Supabase testing
