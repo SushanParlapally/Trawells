@@ -15,8 +15,8 @@ namespace TravelDesk.Service
         public SupabaseStorageService(IConfiguration configuration)
         {
             var supabaseConfig = configuration.GetSection("Supabase");
-            _supabaseUrl = supabaseConfig["Url"];
-            _supabaseKey = supabaseConfig["Key"];
+            _supabaseUrl = supabaseConfig["Url"]; // URL is not sensitive, can use config
+            _supabaseKey = Environment.GetEnvironmentVariable("SUPABASE_ANON_KEY") ?? supabaseConfig["Key"];
 
             if (string.IsNullOrEmpty(_supabaseUrl) || string.IsNullOrEmpty(_supabaseKey))
             {

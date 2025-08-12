@@ -87,7 +87,7 @@ builder.Services.AddDbContext<TravelDeskContext>(options =>
             errorCodesToAdd: null);
         npgsqlOptions.CommandTimeout(120);
     });
-    Console.WriteLine($"Using PostgreSQL (Supabase) with connection: {connectionString}");
+    Console.WriteLine("Using PostgreSQL (Supabase) database connection");
 });
 
 // Add Supabase Storage Service
@@ -111,7 +111,14 @@ builder.Services.AddCors(options =>
 });
 
 // Configure Email Service
-builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<EmailSettings>(options =>
+{
+    var emailSection = builder.Configuration.GetSection("EmailSettings");
+    options.SmtpServer = emailSection["SmtpServer"];
+    options.SmtpPort = int.Parse(emailSection["SmtpPort"] ?? "587");
+    options.SenderEmail = emailSection["SenderEmail"];
+    options.SenderPassword = Environment.GetEnvironmentVariable("EMAIL_PASSWORD") ?? emailSection["SenderPassword"];
+});
 builder.Services.AddScoped<IEmailService, EmailService>(); // Register the EmailService with IEmailService
 
 var app = builder.Build();
