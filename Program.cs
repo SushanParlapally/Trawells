@@ -75,17 +75,27 @@ var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ??
 // Fix common connection string issues
 if (!string.IsNullOrEmpty(connectionString))
 {
-    // Fix incomplete sslmode parameter
-    if (connectionString.Contains("?sslmode") && !connectionString.Contains("sslmode="))
+    Console.WriteLine($"Original connection string: {connectionString}");
+    
+    // Fix incomplete sslmode parameter - more comprehensive fix
+    if (connectionString.EndsWith("?sslmode"))
     {
         connectionString = connectionString.Replace("?sslmode", "?sslmode=require");
+        Console.WriteLine("Fixed incomplete sslmode parameter");
     }
+    
+    // Also handle case where it might be in the middle
+    connectionString = connectionString.Replace("?sslmode&", "?sslmode=require&");
+    connectionString = connectionString.Replace("&sslmode&", "&sslmode=require&");
     
     // Ensure proper SSL mode for Supabase
     if (!connectionString.Contains("sslmode=") && connectionString.Contains("supabase.com"))
     {
         connectionString += connectionString.Contains("?") ? "&sslmode=require" : "?sslmode=require";
+        Console.WriteLine("Added sslmode=require for Supabase");
     }
+    
+    Console.WriteLine($"Final connection string: {connectionString}");
 }
 
 builder.Services.AddDbContext<TravelDeskContext>(options =>
