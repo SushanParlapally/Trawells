@@ -67,11 +67,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Configure Entity Framework - Use PostgreSQL for production
-var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? 
-                      builder.Configuration.GetConnectionString("DefaultConnection");
+// Configure Entity Framework - Clean, professional approach
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-Console.WriteLine("Using database connection from environment variable");
+Console.WriteLine("Using standard .NET configuration pattern for database connection");
 
 builder.Services.AddDbContext<TravelDeskContext>(options =>
 {
