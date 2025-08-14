@@ -160,34 +160,6 @@ using (var scope = app.Services.CreateScope())
             // Only ensure created if we can connect
             context.Database.EnsureCreated();
             Console.WriteLine("Database initialization complete");
-            
-            // Add sample data for SQLite (development)
-            if (builder.Environment.IsDevelopment() && !context.Users.Any())
-            {
-                // Add IT department
-                var itDept = new Department { DepartmentName = "IT", IsActive = true };
-                context.Departments.Add(itDept);
-                
-                // Add Admin role
-                var adminRole = new Role { RoleName = "Admin", IsActive = true };
-                context.Roles.Add(adminRole);
-                
-                // Add admin user
-                var adminUser = new User 
-                { 
-                    FirstName = "Admin", 
-                    LastName = "User", 
-                    Email = "work.sushanparlapally@gmail.com", 
-                    Password = "sushan@123", 
-                    Role = adminRole,
-                    Department = itDept,
-                    IsActive = true
-                };
-                context.Users.Add(adminUser);
-                
-                context.SaveChanges();
-                Console.WriteLine("Database seeding complete");
-            }
         }
         else
         {
@@ -211,12 +183,7 @@ app.UseSwaggerUI();
 app.MapMethods("/", new[] { "GET", "HEAD" }, () => "TravelDesk API is running! Visit /swagger for API documentation.");
 app.MapMethods("/health", new[] { "GET", "HEAD" }, () => new { status = "healthy", timestamp = DateTime.UtcNow });
 
-// Add CORS test endpoint
-app.MapMethods("/api/test-cors", new[] { "GET", "POST", "OPTIONS" }, () => new { 
-    message = "CORS is working!", 
-    timestamp = DateTime.UtcNow,
-    origin = "Backend response"
-});
+
 
 // Use CORS before other middleware
 app.UseCors();

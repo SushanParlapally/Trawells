@@ -59,13 +59,28 @@ namespace TravelDesk.Controllers
             Console.WriteLine($"User authenticated successfully: {user.Email}");
 
             // Retrieve the role from Role table based on RoleId
-            var role = _context.Roles.FirstOrDefault(x => x.RoleId == user.RoleId);
-            string roleName = role?.RoleName ?? "Employee";
-
-        if (roleName == null)
-        {
-            return Unauthorized("Role not found.");
-        }
+            string roleName = "Employee"; // Default role
+            
+            try
+            {
+                if (user.Role != null)
+                {
+                    roleName = user.Role.RoleName ?? "Employee";
+                    Console.WriteLine($"Role loaded from user.Role: {roleName}");
+                }
+                else
+                {
+                    Console.WriteLine($"User.Role is null, looking up role by RoleId: {user.RoleId}");
+                    var role = _context.Roles.FirstOrDefault(x => x.RoleId == user.RoleId);
+                    roleName = role?.RoleName ?? "Employee";
+                    Console.WriteLine($"Role loaded from database: {roleName}");
+                }
+            }
+            catch (Exception roleEx)
+            {
+                Console.WriteLine($"Error loading role: {roleEx.Message}");
+                roleName = "Employee"; // Fallback
+            }
 
             loginModel.RoleName = roleName;
 
@@ -136,7 +151,65 @@ namespace TravelDesk.Controllers
 
     private User? Authenticate(LoginModel loginModel)
     {
-        return _context.Users.FirstOrDefault(x => x.Email == loginModel.Email && x.Password == loginModel.Password);
+        try
+        {
+            Console.WriteLine($"Attempting to authenticate user: {loginModel.Email}");
+            
+            // First, try to find user without includes to isolate the issue
+            var basicUser = _context.Users
+                .FirstOrDefault(x => x.Email == loginModel.Email && x.Password == loginModel.Password && x.IsActive);
+                
+            if (basicUser == null)
+            {
+                Console.WriteLine($"No user found with email: {loginModel.Email}");
+                
+                // Check if user exists with different password
+                var userExists = _context.Users.FirstOrDefault(x => x.Email == loginModel.Email);
+                if (userExists != null)
+                {
+                    Console.WriteLine($"User exists but password mismatch. User active: {userExists.IsActive}");
+                }
+                else
+                {
+                    Console.WriteLine($"No user found with email: {loginModel.Email}");
+                }
+                return null;
+            }
+            
+            Console.WriteLine($"Basic user found: {basicUser.Email}, RoleId: {basicUser.RoleId}, DepartmentId: {basicUser.DepartmentId}");
+            
+            // Now try to load with includes
+            try
+            {
+                var userWithIncludes = _context.Users
+                    .Include(u => u.Role)
+                    .Include(u => u.Department)
+                    .FirstOrDefault(x => x.UserId == basicUser.UserId);
+                    
+                if (userWithIncludes != null)
+                {
+                    Console.WriteLine($"User loaded with includes. Role: {userWithIncludes.Role?.RoleName}, Department: {userWithIncludes.Department?.DepartmentName}");
+                    return userWithIncludes;
+                }
+                else
+                {
+                    Console.WriteLine("Failed to load user with includes, returning basic user");
+                    return basicUser;
+                }
+            }
+            catch (Exception includeEx)
+            {
+                Console.WriteLine($"Error loading includes: {includeEx.Message}");
+                Console.WriteLine("Returning basic user without includes");
+                return basicUser;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database error during authentication: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            throw;
+        }
     }
 }
 }

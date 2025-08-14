@@ -24,7 +24,26 @@ namespace TravelDesk.Controllers
         [HttpGet]
         public async Task<ActionResult<DashboardDto>> GetTravelRequests()
         {
-            var travelRequests = await _context.TravelRequests
+            try
+            {
+                Console.WriteLine("GetTravelRequests called");
+                
+                // First check if we can access the table at all
+                var totalCount = await _context.TravelRequests.CountAsync();
+                Console.WriteLine($"Total travel requests in database: {totalCount}");
+                
+                if (totalCount == 0)
+                {
+                    Console.WriteLine("No travel requests found in database");
+                    return Ok(new DashboardDto
+                    {
+                        TotalRequests = 0,
+                        PendingRequests = 0,
+                        Requests = new List<TravelRequestDto>()
+                    });
+                }
+                
+                var travelRequests = await _context.TravelRequests
                 .Include(tr => tr.UserName)
                 .Include(tr => tr.Project)
                 .Include(tr => tr.UserName!.Department)
@@ -57,12 +76,23 @@ namespace TravelDesk.Controllers
                 })
                 .ToListAsync();
 
-            var dashboard = new DashboardDto
-            {
-                Requests = travelRequests
-            };
+                Console.WriteLine($"Successfully retrieved {travelRequests.Count} travel requests");
 
-            return Ok(dashboard);
+                var dashboard = new DashboardDto
+                {
+                    TotalRequests = travelRequests.Count,
+                    PendingRequests = travelRequests.Count(tr => tr.Status == "Pending"),
+                    Requests = travelRequests
+                };
+
+                return Ok(dashboard);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetTravelRequests: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, $"Error retrieving travel requests: {ex.Message}");
+            }
         }
         [HttpPost]
         public async Task<IActionResult> PostTravelRequest(TravelRequest travelRequest)
@@ -202,6 +232,44 @@ namespace TravelDesk.Controllers
 
         //    return Ok(travelRequest);
         //}
+
+        [HttpGet("test-db")]
+        public async Task<IActionResult> TestTravelRequestsTable()
+        {
+            try
+            {
+                Console.WriteLine("Testing TravelRequests table access...");
+                
+                // Test basic table access
+                var count = await _context.TravelRequests.CountAsync();
+                Console.WriteLine($"TravelRequests table count: {count}");
+                
+                // Test if we can get raw data without includes
+                var rawRequests = await _context.TravelRequests
+                    .Take(5)
+                    .Select(tr => new { 
+                        tr.TravelRequestId, 
+                        tr.UserId, 
+                        tr.FromLocation, 
+                        tr.ToLocation, 
+                        tr.Status 
+                    })
+                    .ToListAsync();
+                    
+                Console.WriteLine($"Raw requests retrieved: {rawRequests.Count}");
+                
+                return Ok(new { 
+                    message = "TravelRequests table test successful",
+                    totalCount = count,
+                    sampleData = rawRequests
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"TravelRequests table test failed: {ex.Message}");
+                return StatusCode(500, $"TravelRequests table test failed: {ex.Message}");
+            }
+        }
 
         private bool TravelRequestExists(int id)
         {
