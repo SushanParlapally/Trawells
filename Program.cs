@@ -67,31 +67,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Configure Entity Framework - Use PostgreSQL for production, SQLite for development
+// Configure Entity Framework - Use PostgreSQL for production
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? 
                       builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Fix connection string issues and convert pooler to direct connection
-if (!string.IsNullOrEmpty(connectionString))
-{
-    Console.WriteLine($"Original connection string: {connectionString}");
-    
-    // Convert pooler connection to direct connection for Entity Framework
-    if (connectionString.Contains("pooler.supabase.com:6543"))
-    {
-        connectionString = connectionString.Replace("aws-0-ap-south-1.pooler.supabase.com:6543", "db.pkhlhfpknxjaqruarvhi.supabase.co:5432");
-        Console.WriteLine("Converted pooler connection to direct connection");
-    }
-    
-    // Ensure proper SSL mode for Supabase
-    if (!connectionString.Contains("sslmode="))
-    {
-        connectionString += connectionString.Contains("?") ? "&sslmode=require" : "?sslmode=require";
-        Console.WriteLine("Added sslmode=require for Supabase");
-    }
-    
-    Console.WriteLine($"Final connection string: {connectionString}");
-}
+Console.WriteLine("Using database connection from environment variable");
 
 builder.Services.AddDbContext<TravelDeskContext>(options =>
 {
