@@ -13,7 +13,7 @@ using TravelDesk.Models;
 using TravelDesk.ViewModel;
 
 
-namespace TravekDesk.Controllers
+namespace TravelDesk.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -35,15 +35,28 @@ namespace TravekDesk.Controllers
     [HttpPost]
     public IActionResult Login(LoginModel loginModel)
     {
-        IActionResult response = Unauthorized();
-
-        // Authenticate the user
-        var user = Authenticate(loginModel);
-
-        if (user == null)
+        try
         {
-            return Unauthorized("Invalid email or password.");
-        }
+            Console.WriteLine($"Login attempt for email: {loginModel?.Email}");
+            
+            if (loginModel == null || string.IsNullOrEmpty(loginModel.Email) || string.IsNullOrEmpty(loginModel.Password))
+            {
+                Console.WriteLine("Invalid login model - missing email or password");
+                return BadRequest("Email and password are required.");
+            }
+
+            IActionResult response = Unauthorized();
+
+            // Authenticate the user
+            var user = Authenticate(loginModel);
+
+            if (user == null)
+            {
+                Console.WriteLine($"Authentication failed for email: {loginModel.Email}");
+                return Unauthorized("Invalid email or password.");
+            }
+            
+            Console.WriteLine($"User authenticated successfully: {user.Email}");
 
             // Retrieve the role from Role table based on RoleId
             var role = _context.Roles.FirstOrDefault(x => x.RoleId == user.RoleId);
@@ -74,7 +87,15 @@ namespace TravekDesk.Controllers
                 //employees = employeeDetails // All employee details
             });
 
+            Console.WriteLine($"Login successful for user: {user.Email}, role: {roleName}");
             return response;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Login error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            return StatusCode(500, "Internal server error during login");
+        }
         }
 
     private string GenerateJSONWebToken(User user,String role)

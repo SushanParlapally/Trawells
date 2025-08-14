@@ -127,7 +127,8 @@ builder.Services.AddCors(options =>
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials();
+            .AllowCredentials()
+            .SetPreflightMaxAge(TimeSpan.FromSeconds(86400)); // 24 hours
     });
 });
 
@@ -209,6 +210,13 @@ app.UseSwaggerUI();
 // Add a simple health check endpoint that supports both GET and HEAD
 app.MapMethods("/", new[] { "GET", "HEAD" }, () => "TravelDesk API is running! Visit /swagger for API documentation.");
 app.MapMethods("/health", new[] { "GET", "HEAD" }, () => new { status = "healthy", timestamp = DateTime.UtcNow });
+
+// Add CORS test endpoint
+app.MapMethods("/api/test-cors", new[] { "GET", "POST", "OPTIONS" }, () => new { 
+    message = "CORS is working!", 
+    timestamp = DateTime.UtcNow,
+    origin = "Backend response"
+});
 
 // Use CORS before other middleware
 app.UseCors();
