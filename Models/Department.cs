@@ -8,11 +8,11 @@ namespace TravelDesk.Models
         public int DepartmentId { get; set; }
         [Required]
         [StringLength(50)]
-        public string DepartmentName { get; set; }
+        public string DepartmentName { get; set; } = string.Empty;
         [JsonIgnore]
 
-        public virtual ICollection<User> Users { get; set; }
-        public virtual ICollection<TravelRequest> TravelRequests { get; set; }
+        public virtual ICollection<User> Users { get; set; } = new List<User>();
+        public virtual ICollection<TravelRequest> TravelRequests { get; set; } = new List<TravelRequest>();
         public int CreatedBy { get; set; }
         public DateTime CreatedOn { get; set; } = DateTime.Now;
         public string? ModifiedBy { get; set; }

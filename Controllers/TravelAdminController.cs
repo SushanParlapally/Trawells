@@ -8,15 +8,16 @@ using System.Threading.Tasks;
 using TravelDesk.Data;
 using TravelDesk.Models;
 using TravelDesk.DTO;
-using iTextSharp.text;
-using iTextSharp.text.pdf;
+using iText.Kernel.Pdf;
+using iText.Layout;
+using iText.Layout.Element;
+using iText.Layout.Properties;
+using iText.Kernel.Colors;
+using iText.Layout.Borders;
 using System.IO;
 using System.Threading.Tasks;
-using Document = iTextSharp.text.Document;
 using TravelDesk.Service;
 using TravelDesk.Interface;
-using Org.BouncyCastle.Pqc.Crypto.Lms;
-using iTextSharp.text.pdf.draw;
 using Microsoft.Extensions.Configuration;
 namespace TravelDesk.Controllers
 {
@@ -240,23 +241,23 @@ namespace TravelDesk.Controllers
                         tr.FromLocation,
                         tr.ToLocation,
                         tr.TicketUrl,
-                        User = new
+                        User = tr.UserName != null ? new
                         {
                             tr.UserName.UserId,
                             tr.UserName.FirstName,
                             tr.UserName.LastName,
                             tr.UserName.Email
-                        },
-                        Project = new
+                        } : null,
+                        Project = tr.Project != null ? new
                         {
                             tr.Project.ProjectId,
                             tr.Project.ProjectName
-                        },
-                        Department = new
+                        } : null,
+                        Department = tr.Department != null ? new
                         {
                             tr.Department.DepartmentId,
                             tr.Department.DepartmentName
-                        }
+                        } : null
                     })
                     .ToListAsync();
 
@@ -316,7 +317,7 @@ namespace TravelDesk.Controllers
                 var pdfDownloadUrl = $"{baseUrl}/api/travel-requests/{travelRequestId}/download-ticket";
                 
                 // Generate PDF content for email attachment
-                byte[] pdfBytes = null;
+                byte[]? pdfBytes = null;
                 try
                 {
                     using (var stream = new MemoryStream())
@@ -357,7 +358,7 @@ namespace TravelDesk.Controllers
 <strong style='color: #34495e;'>Time:</strong> {travelRequest.ToDate}
 </p>
 <p style='margin-bottom: 10px;'>
-<strong style='color: #34495e;'>Traveler Name:</strong> {travelRequest.UserName}
+<strong style='color: #34495e;'>Traveler Name:</strong> {travelRequest.UserName?.FirstName ?? "Unknown"} {travelRequest.UserName?.LastName ?? "User"}
 </p>
 <p style='margin-bottom: 10px;'>
 <strong style='color: #34495e;'>Reason for Travel:</strong> {travelRequest.ReasonForTravel}
@@ -385,7 +386,7 @@ namespace TravelDesk.Controllers
                 if (pdfBytes != null)
                 {
                     await _emailService.SendEmailWithAttachmentAsync(
-                        travelRequest.UserName.Email, 
+                        travelRequest.UserName?.Email ?? "noreply@traveldesk.com", 
                         emailSubject, 
                         emailBody, 
                         pdfBytes, 
@@ -395,7 +396,7 @@ namespace TravelDesk.Controllers
                 else
                 {
                     // Send email without attachment if PDF generation failed
-                    await _emailService.SendEmailAsync(travelRequest.UserName.Email, emailSubject, emailBody);
+                    await _emailService.SendEmailAsync(travelRequest.UserName?.Email ?? "noreply@traveldesk.com", emailSubject, emailBody);
                 }
 
                 return Ok("Booking confirmed successfully.");
@@ -554,111 +555,8 @@ namespace TravelDesk.Controllers
                 var pdfFileName = $"TravelRequest_{travelRequest.TravelRequestId}.pdf";
                 byte[] pdfBytes;
                 
-                using (var stream = new MemoryStream())
-                {
-                    // Create PDF document with page size and margins
-                    using (var document = new Document(PageSize.A4, 36, 36, 36, 36))
-                    {
-                        // Create PdfWriter and attach it to the document
-                        using (var writer = PdfWriter.GetInstance(document, stream))
-                        {
-                            writer.CloseStream = false; // Prevent stream closure by PdfWriter
-                            document.Open();
-
-                            // Fonts used in the document
-                            var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 18, BaseColor.BLACK);
-                            var subTitleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 14, BaseColor.BLACK);
-                            var normalFont = FontFactory.GetFont(FontFactory.HELVETICA, 12, BaseColor.DARK_GRAY);
-
-                            // Define colors for headers and rows
-                            BaseColor headerColor = new BaseColor(63, 81, 181); // Dark blue for headers
-                            BaseColor lightGrayColor = new BaseColor(240, 240, 240); // Light gray for table cells
-
-                            // Add title
-                            var title = new Paragraph("Travel Request Confirmation", titleFont)
-                            {
-                                Alignment = Element.ALIGN_CENTER,
-                                SpacingAfter = 20f
-                            };
-                            document.Add(title);
-
-                            // Add a horizontal line separator
-                            document.Add(new Chunk(new LineSeparator(1.0F, 100.0F, BaseColor.LIGHT_GRAY, Element.ALIGN_CENTER, -1)));
-
-                            // Create a table for travel details
-                            var travelDetailsTable = new PdfPTable(2) { WidthPercentage = 100 };
-                            travelDetailsTable.SetWidths(new float[] { 1, 3 }); // Adjust column widths
-
-                            // Helper method to create table cells with optional background color
-                            PdfPCell CreateCell(string text, Font font, int alignment = Element.ALIGN_LEFT, BaseColor bgColor = null)
-                            {
-                                var cell = new PdfPCell(new Phrase(text, font))
-                                {
-                                    Border = PdfPCell.BOX,
-                                    HorizontalAlignment = alignment,
-                                    Padding = 8,
-                                    BackgroundColor = bgColor ?? BaseColor.WHITE // Default to white background
-                                };
-                                return cell;
-                            }
-
-                            // Add travel details section with alternating row colors
-                            travelDetailsTable.AddCell(CreateCell("From Date:", subTitleFont, Element.ALIGN_LEFT, lightGrayColor));
-                            travelDetailsTable.AddCell(CreateCell(travelRequest.FromDate.ToString("yyyy-MM-dd"), normalFont));
-
-                            travelDetailsTable.AddCell(CreateCell("To Date:", subTitleFont, Element.ALIGN_LEFT, lightGrayColor));
-                            travelDetailsTable.AddCell(CreateCell(travelRequest.ToDate.ToString("yyyy-MM-dd"), normalFont));
-
-                            travelDetailsTable.AddCell(CreateCell("From Location:", subTitleFont, Element.ALIGN_LEFT, lightGrayColor));
-                            travelDetailsTable.AddCell(CreateCell(travelRequest.FromLocation, normalFont));
-
-                            travelDetailsTable.AddCell(CreateCell("To Location:", subTitleFont, Element.ALIGN_LEFT, lightGrayColor));
-                            travelDetailsTable.AddCell(CreateCell(travelRequest.ToLocation, normalFont));
-
-                            // Add the travel details table to the document
-                            document.Add(travelDetailsTable);
-
-                            // Space before adding the user details
-                            document.Add(new Paragraph("\n"));
-
-                            // Add user info with a styled header
-                            var userHeading = new Paragraph("Traveler Information", subTitleFont)
-                            {
-                                SpacingBefore = 10f,
-                                SpacingAfter = 5f,
-                                Alignment = Element.ALIGN_LEFT
-                            };
-                            document.Add(userHeading);
-
-                            // Create a table for user details
-                            var userInfoTable = new PdfPTable(2) { WidthPercentage = 100 };
-                            userInfoTable.SetWidths(new float[] { 1, 3 });
-
-                            // Add user information with alternating colors
-                            userInfoTable.AddCell(CreateCell("Name:", subTitleFont, Element.ALIGN_LEFT, lightGrayColor));
-                            userInfoTable.AddCell(CreateCell($"{travelRequest.UserName.FirstName} {travelRequest.UserName.LastName}", normalFont));
-
-                            userInfoTable.AddCell(CreateCell("Email:", subTitleFont, Element.ALIGN_LEFT, lightGrayColor));
-                            userInfoTable.AddCell(CreateCell(travelRequest.UserName.Email, normalFont));
-
-                            userInfoTable.AddCell(CreateCell("Project:", subTitleFont, Element.ALIGN_LEFT, lightGrayColor));
-                            userInfoTable.AddCell(CreateCell(travelRequest.Project.ProjectName, normalFont));
-
-                            userInfoTable.AddCell(CreateCell("Department:", subTitleFont, Element.ALIGN_LEFT, lightGrayColor));
-                            userInfoTable.AddCell(CreateCell(travelRequest.Department.DepartmentName, normalFont));
-
-                            // Add user info table to the document
-                            document.Add(userInfoTable);
-
-                            // Close the document
-                            document.Close();
-                        }
-                    }
-
-                    // Reset stream position to the start
-                    stream.Position = 0;
-                    pdfBytes = stream.ToArray();
-                }
+                // Generate PDF using the new itext7 helper
+                pdfBytes = PdfGeneratorHelper.GenerateTravelRequestPdf(travelRequest);
 
                 // Upload PDF to Supabase Storage
                 try

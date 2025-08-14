@@ -9,26 +9,26 @@ public class User
 
     [Required]
     [StringLength(50)]
-    public string FirstName { get; set; }
+    public string FirstName { get; set; } = string.Empty;
 
     [StringLength(50)]
     public string? LastName { get; set; }
 
     [Required]
     [StringLength(100)]
-    public string Address { get; set; }
+    public string Address { get; set; } = string.Empty;
 
     [Required]
     [EmailAddress]
-    public string Email { get; set; }
+    public string Email { get; set; } = string.Empty;
 
     [Required]
     [Phone]
-    public string MobileNum { get; set; }
+    public string MobileNum { get; set; } = string.Empty;
 
     [Required]
     [StringLength(100)]
-    public string Password { get; set; }
+    public string Password { get; set; } = string.Empty;
 
     [Required]
     public int RoleId { get; set; }

@@ -10,7 +10,6 @@ using System.Text.Json.Serialization;
 using TravelDesk.Interface;
 using TravelDesk.Models;
 using TravelDesk.Service;
-using TravelDesk.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,9 +48,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Configure JWT Authentication
-var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"]; // Not sensitive, can use config
-var jwtAudience = builder.Configuration["Jwt:Audience"]; // Not sensitive, can use config
+var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"] ?? "default-secret-key-for-development-only";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "TravelDesk"; // Not sensitive, can use config
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "TravelDesk"; // Not sensitive, can use config
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -136,10 +135,10 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<EmailSettings>(options =>
 {
     var emailSection = builder.Configuration.GetSection("EmailSettings");
-    options.SmtpServer = emailSection["SmtpServer"];
+    options.SmtpServer = emailSection["SmtpServer"] ?? "smtp.gmail.com";
     options.SmtpPort = int.Parse(emailSection["SmtpPort"] ?? "587");
-    options.SenderEmail = emailSection["SenderEmail"];
-    options.SenderPassword = Environment.GetEnvironmentVariable("EMAIL_PASSWORD") ?? emailSection["SenderPassword"];
+    options.SenderEmail = emailSection["SenderEmail"] ?? "noreply@traveldesk.com";
+    options.SenderPassword = Environment.GetEnvironmentVariable("EMAIL_PASSWORD") ?? emailSection["SenderPassword"] ?? string.Empty;
 });
 builder.Services.AddScoped<IEmailService, EmailService>(); // Register the EmailService with IEmailService
 
@@ -160,6 +159,34 @@ using (var scope = app.Services.CreateScope())
             // Only ensure created if we can connect
             context.Database.EnsureCreated();
             Console.WriteLine("Database initialization complete");
+            
+            // Add sample data for SQLite (development)
+            if (builder.Environment.IsDevelopment() && !context.Users.Any())
+            {
+                // Add IT department
+                var itDept = new Department { DepartmentName = "IT", IsActive = true };
+                context.Departments.Add(itDept);
+                
+                // Add Admin role
+                var adminRole = new Role { RoleName = "Admin", IsActive = true };
+                context.Roles.Add(adminRole);
+                
+                // Add admin user
+                var adminUser = new User 
+                { 
+                    FirstName = "Admin", 
+                    LastName = "User", 
+                    Email = "work.sushanparlapally@gmail.com", 
+                    Password = "sushan@123", 
+                    Role = adminRole,
+                    Department = itDept,
+                    IsActive = true
+                };
+                context.Users.Add(adminUser);
+                
+                context.SaveChanges();
+                Console.WriteLine("Database seeding complete");
+            }
         }
         else
         {
@@ -171,33 +198,6 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"Database initialization failed: {ex.Message}");
         Console.WriteLine("Application will continue without database initialization");
         // Don't crash the app - continue without database initialization
-    }
-    
-    // Add sample data for SQLite (development)
-    if (builder.Environment.IsDevelopment() && !context.Users.Any())
-    {
-        // Add IT department
-        var itDept = new Department { DepartmentName = "IT", IsActive = true };
-        context.Departments.Add(itDept);
-        
-        // Add Admin role
-        var adminRole = new Role { RoleName = "Admin", IsActive = true };
-        context.Roles.Add(adminRole);
-        
-        // Add admin user
-        var adminUser = new User 
-        { 
-            FirstName = "Admin", 
-            LastName = "User", 
-            Email = "work.sushanparlapally@gmail.com", 
-            Password = "sushan@123", 
-            Role = adminRole,
-            Department = itDept,
-            IsActive = true
-        };
-        context.Users.Add(adminUser);
-        
-        context.SaveChanges();
     }
 }
 

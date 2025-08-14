@@ -84,21 +84,21 @@ namespace TravekDesk.Controllers
            // new claim(jwtregisteredclaimnames.jti, guid.newguid().tostring()),
            
             //new claim(jwtregisteredclaimnames.sid, user.id.tostring()),
-            new Claim("Email", user.Email),
+            new Claim("Email", user.Email ?? string.Empty),
 
            new Claim("userid",user.UserId.ToString()),
-           new Claim("firstname",user.FirstName),
-              new Claim("lastname",user.LastName),
+           new Claim("firstname",user.FirstName ?? string.Empty),
+              new Claim("lastname",user.LastName ?? string.Empty),
               new Claim("departmentid",user.DepartmentId.ToString()),
-            new Claim("role", role),
-            new Claim("managerid",user.ManagerId.ToString ()), 
+            new Claim("role", role ?? string.Empty),
+            new Claim("managerid",user.ManagerId?.ToString() ?? "0"), 
             new Claim("roleId",user.RoleId.ToString()) ,
            
 
             //new Claim("date", datetime.now.tostring())
         };
 
-        var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? _configuration["Jwt:Key"];
+        var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? _configuration["Jwt:Key"] ?? "default-secret-key-for-development-only";
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
@@ -113,7 +113,7 @@ namespace TravekDesk.Controllers
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private User Authenticate(LoginModel loginModel)
+    private User? Authenticate(LoginModel loginModel)
     {
         return _context.Users.FirstOrDefault(x => x.Email == loginModel.Email && x.Password == loginModel.Password);
     }

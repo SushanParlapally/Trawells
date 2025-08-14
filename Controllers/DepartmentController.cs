@@ -44,7 +44,7 @@ namespace TravekDesk.Controllers
                 var usersByDepartment = await _context.Users
                     .Include(u => u.Department)
                     .Where(u => u.IsActive)
-                    .GroupBy(u => u.Department.DepartmentName)
+                    .GroupBy(u => u.Department != null ? u.Department.DepartmentName : "Unknown")
                     .Select(g => new
                     {
                         Department = g.Key,
@@ -55,7 +55,7 @@ namespace TravekDesk.Controllers
                 // Get travel requests by department
                 var requestsByDepartment = await _context.TravelRequests
                     .Include(tr => tr.Department)
-                    .GroupBy(tr => tr.Department.DepartmentName)
+                    .GroupBy(tr => tr.Department != null ? tr.Department.DepartmentName : "Unknown")
                     .Select(g => new
                     {
                         Department = g.Key,
@@ -131,11 +131,11 @@ namespace TravekDesk.Controllers
                         u.LastName,
                         u.Email,
                         u.Address,
-                        Role = new
+                        Role = u.Role != null ? new
                         {
                             u.Role.RoleId,
                             u.Role.RoleName
-                        },
+                        } : null,
                         Manager = u.Manager != null ? new
                         {
                             u.Manager.UserId,

@@ -26,24 +26,24 @@ namespace TravelDesk.Controllers
         public async Task<ActionResult<IEnumerable<TravelRequestDto>>> GetPendingRequests(int managerId)
         {
             var pendingRequests = await _context.TravelRequests
-                .Where(tr => tr.UserName.ManagerId == managerId)
+                .Where(tr => tr.UserName != null && tr.UserName.ManagerId == managerId)
                 .Include(tr => tr.Project)
                 .Include(tr => tr.UserName)
                 .Select(tr => new TravelRequestDto
                 {
                     TravelRequestId = tr.TravelRequestId,
-                    Project = new ProjectDto
+                    Project = tr.Project != null ? new ProjectDto
                     {
                         ProjectId = tr.Project.ProjectId,
                         ProjectName = tr.Project.ProjectName
-                    },
-                    User = new UserDto
+                    } : new ProjectDto(),
+                    User = tr.UserName != null ? new UserDto
                     {
                         UserId = tr.UserName.UserId,
-                        FirstName = tr.UserName.FirstName,
-                        LastName = tr.UserName.LastName
+                        FirstName = tr.UserName.FirstName ?? string.Empty,
+                        LastName = tr.UserName.LastName ?? string.Empty
                        
-                    },
+                    } : new UserDto(),
                     ReasonForTravel = tr.ReasonForTravel,
                     FromDate = tr.FromDate,
                     ToDate = tr.ToDate,
@@ -139,19 +139,19 @@ namespace TravelDesk.Controllers
             try
             {
                 var totalRequests = await _context.TravelRequests
-                    .CountAsync(tr => tr.UserName.ManagerId == managerId);
+                    .CountAsync(tr => tr.UserName != null && tr.UserName.ManagerId == managerId);
 
                 var pendingRequests = await _context.TravelRequests
-                    .CountAsync(tr => tr.UserName.ManagerId == managerId && tr.Status == "Pending");
+                    .CountAsync(tr => tr.UserName != null && tr.UserName.ManagerId == managerId && tr.Status == "Pending");
 
                 var approvedRequests = await _context.TravelRequests
-                    .CountAsync(tr => tr.UserName.ManagerId == managerId && tr.Status == "Approved");
+                    .CountAsync(tr => tr.UserName != null && tr.UserName.ManagerId == managerId && tr.Status == "Approved");
 
                 var rejectedRequests = await _context.TravelRequests
-                    .CountAsync(tr => tr.UserName.ManagerId == managerId && tr.Status == "Rejected");
+                    .CountAsync(tr => tr.UserName != null && tr.UserName.ManagerId == managerId && tr.Status == "Rejected");
 
                 var completedRequests = await _context.TravelRequests
-                    .CountAsync(tr => tr.UserName.ManagerId == managerId && tr.Status == "Completed");
+                    .CountAsync(tr => tr.UserName != null && tr.UserName.ManagerId == managerId && tr.Status == "Completed");
 
                 var teamMembersCount = await _context.Users
                     .CountAsync(u => u.ManagerId == managerId && u.IsActive);
@@ -159,7 +159,7 @@ namespace TravelDesk.Controllers
                 // Get requests by status for the last 30 days
                 var thirtyDaysAgo = DateTime.Now.AddDays(-30);
                 var recentRequests = await _context.TravelRequests
-                    .Where(tr => tr.UserName.ManagerId == managerId && tr.CreatedOn >= thirtyDaysAgo)
+                    .Where(tr => tr.UserName != null && tr.UserName.ManagerId == managerId && tr.CreatedOn >= thirtyDaysAgo)
                     .GroupBy(tr => tr.Status)
                     .Select(g => new
                     {
@@ -171,8 +171,8 @@ namespace TravelDesk.Controllers
                 // Get requests by department for this manager's team
                 var requestsByDepartment = await _context.TravelRequests
                     .Include(tr => tr.Department)
-                    .Where(tr => tr.UserName.ManagerId == managerId)
-                    .GroupBy(tr => tr.Department.DepartmentName)
+                    .Where(tr => tr.UserName != null && tr.UserName.ManagerId == managerId)
+                    .GroupBy(tr => tr.Department != null ? tr.Department.DepartmentName : "Unknown")
                     .Select(g => new
                     {
                         Department = g.Key,
@@ -209,24 +209,24 @@ namespace TravelDesk.Controllers
             try
             {
                 var allRequests = await _context.TravelRequests
-                    .Where(tr => tr.UserName.ManagerId == managerId)
+                    .Where(tr => tr.UserName != null && tr.UserName.ManagerId == managerId)
                     .Include(tr => tr.Project)
                     .Include(tr => tr.UserName)
                     .Include(tr => tr.Department)
                     .Select(tr => new TravelRequestDto
                     {
                         TravelRequestId = tr.TravelRequestId,
-                        Project = new ProjectDto
+                        Project = tr.Project != null ? new ProjectDto
                         {
                             ProjectId = tr.Project.ProjectId,
                             ProjectName = tr.Project.ProjectName
-                        },
-                        User = new UserDto
+                        } : new ProjectDto(),
+                        User = tr.UserName != null ? new UserDto
                         {
                             UserId = tr.UserName.UserId,
-                            FirstName = tr.UserName.FirstName,
-                            LastName = tr.UserName.LastName
-                        },
+                            FirstName = tr.UserName.FirstName ?? string.Empty,
+                            LastName = tr.UserName.LastName ?? string.Empty
+                        } : new UserDto(),
                         ReasonForTravel = tr.ReasonForTravel,
                         FromDate = tr.FromDate,
                         ToDate = tr.ToDate,
@@ -256,24 +256,24 @@ namespace TravelDesk.Controllers
             try
             {
                 var requests = await _context.TravelRequests
-                    .Where(tr => tr.UserName.ManagerId == managerId && tr.Status == status)
+                    .Where(tr => tr.UserName != null && tr.UserName.ManagerId == managerId && tr.Status == status)
                     .Include(tr => tr.Project)
                     .Include(tr => tr.UserName)
                     .Include(tr => tr.Department)
                     .Select(tr => new TravelRequestDto
                     {
                         TravelRequestId = tr.TravelRequestId,
-                        Project = new ProjectDto
+                        Project = tr.Project != null ? new ProjectDto
                         {
                             ProjectId = tr.Project.ProjectId,
                             ProjectName = tr.Project.ProjectName
-                        },
-                        User = new UserDto
+                        } : new ProjectDto(),
+                        User = tr.UserName != null ? new UserDto
                         {
                             UserId = tr.UserName.UserId,
-                            FirstName = tr.UserName.FirstName,
-                            LastName = tr.UserName.LastName
-                        },
+                            FirstName = tr.UserName.FirstName ?? string.Empty,
+                            LastName = tr.UserName.LastName ?? string.Empty
+                        } : new UserDto(),
                         ReasonForTravel = tr.ReasonForTravel,
                         FromDate = tr.FromDate,
                         ToDate = tr.ToDate,
@@ -313,16 +313,16 @@ namespace TravelDesk.Controllers
                         u.LastName,
                         u.Email,
                         u.Address,
-                        Department = new
+                        Department = u.Department != null ? new
                         {
                             u.Department.DepartmentId,
                             u.Department.DepartmentName
-                        },
-                        Role = new
+                        } : null,
+                        Role = u.Role != null ? new
                         {
                             u.Role.RoleId,
                             u.Role.RoleName
-                        }
+                        } : null
                     })
                     .ToListAsync();
 

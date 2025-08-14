@@ -53,7 +53,7 @@ namespace TravelDesk.Controllers
                 // Get travel requests by project
                 var requestsByProject = await _context.TravelRequests
                     .Include(tr => tr.Project)
-                    .GroupBy(tr => tr.Project.ProjectName)
+                    .GroupBy(tr => tr.Project != null ? tr.Project.ProjectName : "Unknown")
                     .Select(g => new
                     {
                         Project = g.Key,
@@ -64,6 +64,7 @@ namespace TravelDesk.Controllers
                 // Get projects with most travel requests
                 var topProjects = await _context.TravelRequests
                     .Include(tr => tr.Project)
+                    .Where(tr => tr.Project != null)
                     .GroupBy(tr => new { tr.Project.ProjectId, tr.Project.ProjectName })
                     .Select(g => new
                     {

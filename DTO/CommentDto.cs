@@ -2,6 +2,6 @@
 {
     public class CommentDto
     {
-        public string Comments { get; set; }
+        public string Comments { get; set; } = string.Empty;
     }
 }

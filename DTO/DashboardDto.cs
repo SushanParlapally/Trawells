@@ -4,7 +4,7 @@ namespace TravelDesk.DTO
 {
     public class DashboardDto
     {
-        public List<TravelRequestDto> Requests { get; set; }
+        public List<TravelRequestDto> Requests { get; set; } = new List<TravelRequestDto>();
     }
 
 }

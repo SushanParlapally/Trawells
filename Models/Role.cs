@@ -11,9 +11,9 @@ namespace TravelDesk.Models
 
         [Required]
         [StringLength(50)]
-        public string RoleName { get; set; }
+        public string RoleName { get; set; } = string.Empty;
         [JsonIgnore]
-        public virtual ICollection<User> Users { get; set; }
+        public virtual ICollection<User> Users { get; set; } = new List<User>();
         public int CreatedBy { get; set; }
         public DateTime CreatedOn { get; set; } = DateTime.Now;
         public string? ModifiedBy { get; set; }

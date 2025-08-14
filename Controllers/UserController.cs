@@ -36,7 +36,7 @@ namespace TravekDesk.Controllers
                 .Include(u => u.Role)
                 .Include(u => u.Department)
                 .Include(u => u.Manager)
-                .Where(u=>u.Role.RoleName!="Admin" && u.IsActive==true)
+                .Where(u=>u.Role != null && u.Role.RoleName!="Admin" && u.IsActive==true)
                 .ToList();
 
             return Ok(users);
@@ -190,7 +190,7 @@ namespace TravekDesk.Controllers
                 var usersByDepartment = await _context.Users
                     .Include(u => u.Department)
                     .Where(u => u.IsActive)
-                    .GroupBy(u => u.Department.DepartmentName)
+                    .GroupBy(u => u.Department != null ? u.Department.DepartmentName : "Unknown")
                     .Select(g => new
                     {
                         Department = g.Key,
@@ -256,19 +256,20 @@ namespace TravekDesk.Controllers
                         tr.TravelRequestId,
                         tr.Status,
                         tr.CreatedOn,
-                        User = new
+                        User = tr.UserName != null ? new
                         {
                             tr.UserName.FirstName,
                             tr.UserName.LastName,
                             tr.UserName.Email
-                        },
-                        Department = tr.Department.DepartmentName
+                        } : null,
+                        Department = tr.Department != null ? tr.Department.DepartmentName : "Unknown"
                     })
                     .ToListAsync();
 
                 // Get users with most travel requests
                 var activeUsers = await _context.TravelRequests
                     .Include(tr => tr.UserName)
+                    .Where(tr => tr.UserName != null)
                     .GroupBy(tr => new { tr.UserName.UserId, tr.UserName.FirstName, tr.UserName.LastName })
                     .Select(g => new
                     {
@@ -316,16 +317,16 @@ namespace TravekDesk.Controllers
                         u.Email,
                         u.Address,
                         u.IsActive,
-                        Role = new
+                        Role = u.Role != null ? new
                         {
                             u.Role.RoleId,
                             u.Role.RoleName
-                        },
-                        Department = new
+                        } : null,
+                        Department = u.Department != null ? new
                         {
                             u.Department.DepartmentId,
                             u.Department.DepartmentName
-                        },
+                        } : null,
                         Manager = u.Manager != null ? new
                         {
                             u.Manager.UserId,
@@ -364,16 +365,16 @@ namespace TravekDesk.Controllers
                         u.Email,
                         u.Address,
                         u.IsActive,
-                        Role = new
+                        Role = u.Role != null ? new
                         {
                             u.Role.RoleId,
                             u.Role.RoleName
-                        },
-                        Department = new
+                        } : null,
+                        Department = u.Department != null ? new
                         {
                             u.Department.DepartmentId,
                             u.Department.DepartmentName
-                        },
+                        } : null,
                         Manager = u.Manager != null ? new
                         {
                             u.Manager.UserId,

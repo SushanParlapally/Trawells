@@ -27,26 +27,26 @@ namespace TravelDesk.Controllers
             var travelRequests = await _context.TravelRequests
                 .Include(tr => tr.UserName)
                 .Include(tr => tr.Project)
-                .Include(tr => tr.UserName.Department)
+                .Include(tr => tr.UserName!.Department)
                 .Select(tr => new TravelRequestDto
                 {
                     TravelRequestId = tr.TravelRequestId,
-                    User = new UserDto
+                    User = tr.UserName != null ? new UserDto
                     {
                         UserId = tr.UserName.UserId,
-                        FirstName = tr.UserName.FirstName,
-                        LastName = tr.UserName.LastName,
-                        Department = new DepartmentDto
+                        FirstName = tr.UserName.FirstName ?? string.Empty,
+                        LastName = tr.UserName.LastName ?? string.Empty,
+                        Department = tr.UserName.Department != null ? new DepartmentDto
                         {
                             DepartmentId = tr.UserName.Department.DepartmentId,
                             DepartmentName = tr.UserName.Department.DepartmentName
-                        }
-                    },
-                    Project = new ProjectDto
+                        } : new DepartmentDto()
+                    } : new UserDto(),
+                    Project = tr.Project != null ? new ProjectDto
                     {
                         ProjectId = tr.Project.ProjectId,
                         ProjectName = tr.Project.ProjectName
-                    },
+                    } : new ProjectDto(),
                     ReasonForTravel = tr.ReasonForTravel,
                     FromDate = tr.FromDate,
                     ToDate = tr.ToDate,
@@ -120,26 +120,26 @@ namespace TravelDesk.Controllers
                 .Where(tr => tr.UserId == userId)
                 .Include(tr => tr.UserName)
                 .Include(tr => tr.Project)
-                .Include(tr => tr.UserName.Department)
+                .Include(tr => tr.UserName!.Department)
                 .Select(tr => new TravelRequestDto
                 {
                     TravelRequestId = tr.TravelRequestId,
-                    User = new UserDto
+                    User = tr.UserName != null ? new UserDto
                     {
                         UserId = tr.UserName.UserId,
-                        FirstName = tr.UserName.FirstName,
-                        LastName = tr.UserName.LastName,
-                        Department = new DepartmentDto
+                        FirstName = tr.UserName.FirstName ?? string.Empty,
+                        LastName = tr.UserName.LastName ?? string.Empty,
+                        Department = tr.UserName.Department != null ? new DepartmentDto
                         {
                             DepartmentId = tr.UserName.Department.DepartmentId,
                             DepartmentName = tr.UserName.Department.DepartmentName
-                        }
-                    },
-                    Project = new ProjectDto
+                        } : new DepartmentDto()
+                    } : new UserDto(),
+                    Project = tr.Project != null ? new ProjectDto
                     {
                         ProjectId = tr.Project.ProjectId,
                         ProjectName = tr.Project.ProjectName
-                    },
+                    } : new ProjectDto(),
                     ReasonForTravel = tr.ReasonForTravel,
                     FromDate = tr.FromDate,
                     ToDate = tr.ToDate,

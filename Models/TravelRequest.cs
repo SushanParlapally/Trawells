@@ -15,11 +15,11 @@ namespace TravelDesk.Models
         public Project? Project { get; set; }
         public int DepartmentId { get; set; }
         public Department? Department { get; set; }
-        public string ReasonForTravel { get; set; }
+        public string ReasonForTravel { get; set; } = string.Empty;
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
-        public string FromLocation { get; set; }
-        public string ToLocation { get; set; }
+        public string FromLocation { get; set; } = string.Empty;
+        public string ToLocation { get; set; } = string.Empty;
 
         public string? Comments { get; set; }
 
