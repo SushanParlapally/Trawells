@@ -72,24 +72,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? 
                       builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Fix common connection string issues
+// Fix connection string issues and convert pooler to direct connection
 if (!string.IsNullOrEmpty(connectionString))
 {
     Console.WriteLine($"Original connection string: {connectionString}");
     
-    // Fix incomplete sslmode parameter - more comprehensive fix
-    if (connectionString.EndsWith("?sslmode"))
+    // Convert pooler connection to direct connection for Entity Framework
+    if (connectionString.Contains("pooler.supabase.com:6543"))
     {
-        connectionString = connectionString.Replace("?sslmode", "?sslmode=require");
-        Console.WriteLine("Fixed incomplete sslmode parameter");
+        connectionString = connectionString.Replace("aws-0-ap-south-1.pooler.supabase.com:6543", "db.pkhlhfpknxjaqruarvhi.supabase.co:5432");
+        Console.WriteLine("Converted pooler connection to direct connection");
     }
     
-    // Also handle case where it might be in the middle
-    connectionString = connectionString.Replace("?sslmode&", "?sslmode=require&");
-    connectionString = connectionString.Replace("&sslmode&", "&sslmode=require&");
-    
     // Ensure proper SSL mode for Supabase
-    if (!connectionString.Contains("sslmode=") && connectionString.Contains("supabase.com"))
+    if (!connectionString.Contains("sslmode="))
     {
         connectionString += connectionString.Contains("?") ? "&sslmode=require" : "?sslmode=require";
         Console.WriteLine("Added sslmode=require for Supabase");
@@ -152,8 +148,30 @@ var app = builder.Build();
 // Initialize database
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<TravelDeskContext>();
-    context.Database.EnsureCreated();
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<TravelDeskContext>();
+        Console.WriteLine("Attempting database connection...");
+        
+        // Test connection first
+        if (context.Database.CanConnect())
+        {
+            Console.WriteLine("Database connection successful");
+            // Only ensure created if we can connect
+            context.Database.EnsureCreated();
+            Console.WriteLine("Database initialization complete");
+        }
+        else
+        {
+            Console.WriteLine("Cannot connect to database - skipping initialization");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database initialization failed: {ex.Message}");
+        Console.WriteLine("Application will continue without database initialization");
+        // Don't crash the app - continue without database initialization
+    }
     
     // Add sample data for SQLite (development)
     if (builder.Environment.IsDevelopment() && !context.Users.Any())
