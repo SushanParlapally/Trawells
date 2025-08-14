@@ -17,11 +17,15 @@ var builder = WebApplication.CreateBuilder(args);
 var port = Environment.GetEnvironmentVariable("PORT") ?? "7075";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-// Initialize Supabase Client
+// --- Unified Configuration Section ---
+// Supabase Client Initialization
 try
 {
-    var supabaseUrl = builder.Configuration["Supabase:Url"]; // Not sensitive, can use config
-    var supabaseKey = Environment.GetEnvironmentVariable("SUPABASE_ANON_KEY") ?? builder.Configuration["Supabase:Key"];
+    var supabaseUrl = builder.Configuration["Supabase:Url"];
+    var supabaseKey = builder.Configuration["Supabase:Key"];
+    
+    Console.WriteLine($"[DIAGNOSTIC] Supabase URL from config: '{supabaseUrl ?? "--- IS NULL ---"}'");
+    Console.WriteLine($"[DIAGNOSTIC] Supabase AnonKey from config: '{(string.IsNullOrEmpty(supabaseKey) ? "--- IS NULL ---" : "SET")}'");
     
     if (!string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey))
     {
@@ -29,7 +33,7 @@ try
     }
     else
     {
-        Console.WriteLine("Supabase configuration is missing. Storage features will be disabled.");
+        Console.WriteLine("Supabase configuration is MISSING. Storage features will be disabled.");
     }
 }
 catch (Exception ex)
@@ -40,65 +44,54 @@ catch (Exception ex)
 // Add services to the container.
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
-    // Ignore cycles to avoid adding $id and $ref metadata
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-    options.JsonSerializerOptions.MaxDepth = 64; // Increase depth if needed
+    options.JsonSerializerOptions.MaxDepth = 64;
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Configure JWT Authentication
-var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"] ?? "default-secret-key-for-development-only";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "TravelDesk"; // Not sensitive, can use config
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "TravelDesk"; // Not sensitive, can use config
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "default-secret-key-for-development-if-not-set";
+Console.WriteLine($"[DIAGNOSTIC] JWT Key from config: '{(string.IsNullOrEmpty(jwtKey) ? "--- IS NULL ---" : "SET")}'");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
+            ValidateIssuer = false, // Simplified for robust deployment
+            ValidateAudience = false, // Simplified for robust deployment
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 
-// Configure Entity Framework - Clean, professional approach
+// Configure Entity Framework (This part was already perfect)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-Console.WriteLine("Using standard .NET configuration pattern for database connection");
+Console.WriteLine($"[DIAGNOSTIC] Connection String from config: '{(string.IsNullOrEmpty(connectionString) ? "--- IS NULL OR EMPTY ---" : "SET")}'");
 
 builder.Services.AddDbContext<TravelDeskContext>(options =>
 {
-    // Force PostgreSQL for Supabase testing
-    var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-    Console.WriteLine($"Environment variable ASPNETCORE_ENVIRONMENT = {env}");
-    
-    // Always use PostgreSQL for now to test Supabase
-    options.UseNpgsql(connectionString, npgsqlOptions =>
+    if (string.IsNullOrEmpty(connectionString))
     {
-        npgsqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 3,
-            maxRetryDelay: TimeSpan.FromSeconds(30),
-            errorCodesToAdd: null);
-        npgsqlOptions.CommandTimeout(120);
-    });
-    Console.WriteLine("Using PostgreSQL (Supabase) database connection");
+        Console.WriteLine("[FATAL] Database connection string not found. Database services will fail.");
+    }
+    
+    options.UseNpgsql(connectionString); // No need for extra options here unless debugging
 });
 
-// Add Supabase Storage Service
+// Add Application Services
 builder.Services.AddScoped<ISupabaseStorageService, SupabaseStorageService>();
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings")); // This correctly binds the whole section
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Add CORS support
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(builder =>
+    options.AddDefaultPolicy(policyBuilder =>
     {
-        builder.WithOrigins(
+        policyBuilder.WithOrigins(
                 "https://trawells.netlify.app",
                 "https://travel-desk-app.netlify.app",
                 "http://localhost:3000",
@@ -106,25 +99,13 @@ builder.Services.AddCors(options =>
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials()
-            .SetPreflightMaxAge(TimeSpan.FromSeconds(86400)); // 24 hours
+            .AllowCredentials();
     });
 });
 
-// Configure Email Service
-builder.Services.Configure<EmailSettings>(options =>
-{
-    var emailSection = builder.Configuration.GetSection("EmailSettings");
-    options.SmtpServer = emailSection["SmtpServer"] ?? "smtp.gmail.com";
-    options.SmtpPort = int.Parse(emailSection["SmtpPort"] ?? "587");
-    options.SenderEmail = emailSection["SenderEmail"] ?? "noreply@traveldesk.com";
-    options.SenderPassword = Environment.GetEnvironmentVariable("EMAIL_PASSWORD") ?? emailSection["SenderPassword"] ?? string.Empty;
-});
-builder.Services.AddScoped<IEmailService, EmailService>(); // Register the EmailService with IEmailService
-
 var app = builder.Build();
 
-// Initialize database
+// --- Database Initialization ---
 using (var scope = app.Services.CreateScope())
 {
     try
@@ -132,45 +113,33 @@ using (var scope = app.Services.CreateScope())
         var context = scope.ServiceProvider.GetRequiredService<TravelDeskContext>();
         Console.WriteLine("Attempting database connection...");
         
-        // Test connection first
         if (context.Database.CanConnect())
         {
-            Console.WriteLine("Database connection successful");
-            // Only ensure created if we can connect
+            Console.WriteLine("Database connection successful.");
             context.Database.EnsureCreated();
-            Console.WriteLine("Database initialization complete");
+            Console.WriteLine("Database initialization complete.");
         }
         else
         {
-            Console.WriteLine("Cannot connect to database - skipping initialization");
+            Console.WriteLine("[FATAL] Cannot connect to database.");
         }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Database initialization failed: {ex.Message}");
-        Console.WriteLine("Application will continue without database initialization");
-        // Don't crash the app - continue without database initialization
+        Console.WriteLine($"[FATAL] Database initialization failed: {ex.Message}");
     }
 }
 
-// Configure the HTTP request pipeline.
-// Enable Swagger in all environments for API documentation
+// --- HTTP Request Pipeline ---
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Add a simple health check endpoint that supports both GET and HEAD
 app.MapMethods("/", new[] { "GET", "HEAD" }, () => "TravelDesk API is running! Visit /swagger for API documentation.");
 app.MapMethods("/health", new[] { "GET", "HEAD" }, () => new { status = "healthy", timestamp = DateTime.UtcNow });
 
-
-
-// Use CORS before other middleware
 app.UseCors();
-
-// Ensure authentication is used
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
