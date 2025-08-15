@@ -11,6 +11,7 @@ using TravelDesk.Interface;
 using TravelDesk.Models;
 using TravelDesk.Service;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Render.io compatibility
@@ -86,9 +87,6 @@ builder.Services.AddDbContext<TravelDeskContext>(options =>
             errorCodesToAdd: null);
         npgsqlOptions.CommandTimeout(120);
     });
-    
-    // Configure PostgreSQL to handle DateTime properly
-    AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 });
 
 // Add Application Services
@@ -113,7 +111,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+Console.WriteLine("[STARTUP] Building application...");
 var app = builder.Build();
+Console.WriteLine("[STARTUP] Application built successfully");
 
 // --- Database Initialization ---
 using (var scope = app.Services.CreateScope())
@@ -152,4 +152,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+Console.WriteLine("[STARTUP] Starting application...");
 app.Run();
