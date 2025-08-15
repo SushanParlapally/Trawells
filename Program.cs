@@ -78,7 +78,17 @@ builder.Services.AddDbContext<TravelDeskContext>(options =>
         Console.WriteLine("[FATAL] Database connection string not found. Database services will fail.");
     }
     
-    options.UseNpgsql(connectionString); // No need for extra options here unless debugging
+    options.UseNpgsql(connectionString, npgsqlOptions =>
+    {
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorCodesToAdd: null);
+        npgsqlOptions.CommandTimeout(120);
+    });
+    
+    // Configure PostgreSQL to handle DateTime properly
+    AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 });
 
 // Add Application Services

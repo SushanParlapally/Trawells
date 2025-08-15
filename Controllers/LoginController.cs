@@ -131,7 +131,7 @@ namespace TravelDesk.Controllers
             new Claim("roleId",user.RoleId.ToString()) ,
            
 
-            //new Claim("date", datetime.now.tostring())
+            //new Claim("date", DateTime.UtcNow .tostring())
         };
 
         var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? _configuration["Jwt:Key"] ?? "default-secret-key-for-development-only";
@@ -142,7 +142,7 @@ namespace TravelDesk.Controllers
             issuer: _configuration["Jwt:Issuer"],
             audience: _configuration["Jwt:Issuer"],
             claims: claims,
-            expires: DateTime.Now.AddMinutes(120),
+            expires: DateTime.UtcNow.AddMinutes(120),
             signingCredentials: credentials
         );
 

@@ -76,7 +76,7 @@ namespace TravelDesk.Controllers
                         document.Add(userTable);
 
                         // Add footer
-                        var footer = new Paragraph($"Generated on: {DateTime.Now:yyyy-MM-dd HH:mm:ss}")
+                        var footer = new Paragraph($"Generated on: {DateTime.UtcNow :yyyy-MM-dd HH:mm:ss}")
                             .SetTextAlignment(TextAlignment.CENTER)
                             .SetFontSize(10)
                             .SetMarginTop(30);

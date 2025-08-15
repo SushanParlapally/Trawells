@@ -14,7 +14,7 @@ namespace TravelDesk.Models
         public virtual ICollection<User> Users { get; set; } = new List<User>();
         public virtual ICollection<TravelRequest> TravelRequests { get; set; } = new List<TravelRequest>();
         public int CreatedBy { get; set; }
-        public DateTime CreatedOn { get; set; } = DateTime.Now;
+        public DateTime CreatedOn { get; set; } = DateTime.UtcNow ;
         public string? ModifiedBy { get; set; }
         public DateTime? ModifiedOn { get; set; }
         public bool IsActive { get; set; } = true;

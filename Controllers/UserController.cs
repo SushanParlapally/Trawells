@@ -45,6 +45,7 @@ namespace TravekDesk.Controllers
 
 
         [HttpPost("users")]
+        [Authorize(Roles = "Admin")]
         public ActionResult<User> AddUser(User user)
         {
             if (!ModelState.IsValid)
@@ -56,7 +57,7 @@ namespace TravekDesk.Controllers
             {
                 // Ensure required fields are set
                 user.CreatedBy = user.CreatedBy == 0 ? 1 : user.CreatedBy;
-                user.CreatedOn = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+                user.CreatedOn = DateTime.UtcNow;
                 user.IsActive = true;
 
                 _context.Users.Add(user);
@@ -199,7 +200,7 @@ namespace TravekDesk.Controllers
                     .ToListAsync();
 
                 // Get recent activity (last 30 days)
-                var thirtyDaysAgo = DateTime.Now.AddDays(-30);
+                var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
                 var recentTravelRequests = await _context.TravelRequests
                     .Where(tr => tr.CreatedOn >= thirtyDaysAgo)
                     .CountAsync();

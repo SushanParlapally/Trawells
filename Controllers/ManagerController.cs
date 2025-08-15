@@ -157,7 +157,7 @@ namespace TravelDesk.Controllers
                     .CountAsync(u => u.ManagerId == managerId && u.IsActive);
 
                 // Get requests by status for the last 30 days
-                var thirtyDaysAgo = DateTime.Now.AddDays(-30);
+                var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
                 var recentRequests = await _context.TravelRequests
                     .Where(tr => tr.UserName != null && tr.UserName.ManagerId == managerId && tr.CreatedOn >= thirtyDaysAgo)
                     .GroupBy(tr => tr.Status)

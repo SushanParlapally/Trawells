@@ -121,7 +121,7 @@ namespace TravelDesk.Controllers
 
         //    travelRequest.Status = travelRequestDto.Status;
         //    travelRequest.Comments = travelRequestDto.Comments;
-        //    travelRequest.ModifiedOn = DateTime.Now;
+        //    travelRequest.ModifiedOn = DateTime.UtcNow ;
 
         //    _context.Entry(travelRequest).State = EntityState.Modified;
 

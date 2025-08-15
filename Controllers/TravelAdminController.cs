@@ -708,7 +708,7 @@ namespace TravelDesk.Controllers
                     .ToListAsync();
 
                 // Get requests by status for the last 30 days
-                var thirtyDaysAgo = DateTime.Now.AddDays(-30);
+                var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
                 var recentRequests = await _context.TravelRequests
                     .Where(tr => tr.CreatedOn >= thirtyDaysAgo)
                     .GroupBy(tr => tr.Status)
