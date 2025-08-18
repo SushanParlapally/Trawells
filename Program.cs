@@ -11,35 +11,18 @@ using TravelDesk.Interface;
 using TravelDesk.Models;
 using TravelDesk.Service;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Render.io compatibility
 var port = Environment.GetEnvironmentVariable("PORT") ?? "7075";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-// --- Unified Configuration Section ---
 // Supabase Client Initialization
-try
+var supabaseUrl = builder.Configuration["Supabase:Url"];
+var supabaseKey = builder.Configuration["Supabase:Key"];
+if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
 {
-    var supabaseUrl = builder.Configuration["Supabase:Url"];
-    var supabaseKey = builder.Configuration["Supabase:Key"];
-    
-    Console.WriteLine($"[DIAGNOSTIC] Supabase URL from config: '{supabaseUrl ?? "--- IS NULL ---"}'");
-    Console.WriteLine($"[DIAGNOSTIC] Supabase AnonKey from config: '{(string.IsNullOrEmpty(supabaseKey) ? "--- IS NULL ---" : "SET")}'");
-    
-    if (!string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey))
-    {
-        Console.WriteLine("Supabase configuration found. Storage features will be available.");
-    }
-    else
-    {
-        Console.WriteLine("Supabase configuration is MISSING. Storage features will be disabled.");
-    }
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Supabase initialization failed: {ex.Message}");
+    Console.WriteLine("Supabase configuration is MISSING. Storage features will be disabled.");
 }
 
 // Add services to the container.
@@ -53,32 +36,27 @@ builder.Services.AddSwaggerGen();
 
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "default-secret-key-for-development-if-not-set";
-Console.WriteLine($"[DIAGNOSTIC] JWT Key from config: '{(string.IsNullOrEmpty(jwtKey) ? "--- IS NULL ---" : "SET")}'");
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = false, // Simplified for robust deployment
-            ValidateAudience = false, // Simplified for robust deployment
+            ValidateIssuer = false,
+            ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 
-// Configure Entity Framework (This part was already perfect)
+// Configure Entity Framework
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-Console.WriteLine($"[DIAGNOSTIC] Connection String from config: '{(string.IsNullOrEmpty(connectionString) ? "--- IS NULL OR EMPTY ---" : "SET")}'");
-
 builder.Services.AddDbContext<TravelDeskContext>(options =>
 {
     if (string.IsNullOrEmpty(connectionString))
     {
         Console.WriteLine("[FATAL] Database connection string not found. Database services will fail.");
     }
-    
     options.UseNpgsql(connectionString, npgsqlOptions =>
     {
         npgsqlOptions.EnableRetryOnFailure(
@@ -91,7 +69,7 @@ builder.Services.AddDbContext<TravelDeskContext>(options =>
 
 // Add Application Services
 builder.Services.AddScoped<ISupabaseStorageService, SupabaseStorageService>();
-builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings")); // This correctly binds the whole section
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Add CORS support
@@ -111,9 +89,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-Console.WriteLine("[STARTUP] Building application...");
 var app = builder.Build();
-Console.WriteLine("[STARTUP] Application built successfully");
 
 // --- Database Initialization ---
 using (var scope = app.Services.CreateScope())
@@ -121,13 +97,10 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = scope.ServiceProvider.GetRequiredService<TravelDeskContext>();
-        Console.WriteLine("Attempting database connection...");
-        
         if (context.Database.CanConnect())
         {
             Console.WriteLine("Database connection successful.");
             context.Database.EnsureCreated();
-            Console.WriteLine("Database initialization complete.");
         }
         else
         {
@@ -152,5 +125,4 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-Console.WriteLine("[STARTUP] Starting application...");
 app.Run();
