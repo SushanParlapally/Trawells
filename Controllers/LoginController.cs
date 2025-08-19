@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using TravelDesk.Data;
 using TravelDesk.Models;
 using TravelDesk.ViewModel;
+using TravelDesk.Services;
 
 
 namespace TravelDesk.Controllers
@@ -23,13 +24,15 @@ namespace TravelDesk.Controllers
     {
         private readonly TravelDeskContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IPasswordService _passwordService;
 
     
 
-    public LoginController(TravelDeskContext context, IConfiguration configuration)
+    public LoginController(TravelDeskContext context, IConfiguration configuration, IPasswordService passwordService)
     {
         _context = context;
         _configuration = configuration;
+        _passwordService = passwordService;
 
     }
     [HttpPost]
@@ -157,7 +160,7 @@ namespace TravelDesk.Controllers
             
             // First, try to find user without includes to isolate the issue
             var basicUser = _context.Users
-                .FirstOrDefault(x => x.Email == loginModel.Email && x.Password == loginModel.Password && x.IsActive);
+                .FirstOrDefault(x => x.Email == loginModel.Email && x.IsActive);
                 
             if (basicUser == null)
             {
@@ -174,6 +177,21 @@ namespace TravelDesk.Controllers
                     Console.WriteLine($"No user found with email: {loginModel.Email}");
                 }
                 return null;
+            }
+
+            // Verify password using the password service
+            try
+            {
+                if (!_passwordService.VerifyPassword(loginModel.Password, basicUser.PasswordHash))
+                {
+                    Console.WriteLine($"Password verification failed for user: {loginModel.Email}");
+                    return null; // Password does not match
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"Password verification failed due to invalid input: {ex.Message}");
+                return null; // Invalid password format
             }
             
             Console.WriteLine($"Basic user found: {basicUser.Email}, RoleId: {basicUser.RoleId}, DepartmentId: {basicUser.DepartmentId}");

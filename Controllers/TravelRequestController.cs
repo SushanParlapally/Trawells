@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TravelDesk.Data;
 using TravelDesk.DTO;
@@ -6,6 +6,7 @@ using TravelDesk.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TravelDesk.Services;
 
 namespace TravelDesk.Controllers
 {
@@ -14,10 +15,12 @@ namespace TravelDesk.Controllers
     public class TravelRequestController : ControllerBase
     {
         private readonly TravelDeskContext _context;
+        private readonly INotificationService _notificationService;
 
-        public TravelRequestController(TravelDeskContext context)
+        public TravelRequestController(TravelDeskContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         // GET: api/TravelRequest
@@ -103,6 +106,8 @@ namespace TravelDesk.Controllers
 
             _context.TravelRequests.Add(travelRequest);
             await _context.SaveChangesAsync();
+
+            await _notificationService.SendTravelRequestNotificationAsync(travelRequest, "created", "employee");
 
             return CreatedAtAction(nameof(GetTravelRequests), new { id = travelRequest.TravelRequestId }, travelRequest);
         }

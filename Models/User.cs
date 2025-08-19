@@ -27,8 +27,8 @@ public class User
     public string MobileNum { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(100)]
-    public string Password { get; set; } = string.Empty;
+    [StringLength(255)] // Increased length for hashed password
+    public string PasswordHash { get; set; } = string.Empty;
 
     [Required]
     public int RoleId { get; set; }

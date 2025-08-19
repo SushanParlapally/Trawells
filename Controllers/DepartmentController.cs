@@ -164,7 +164,7 @@ namespace TravekDesk.Controllers
                 var requests = await _context.TravelRequests
                     .Include(tr => tr.UserName)
                     .Include(tr => tr.Project)
-                    .Where(tr => tr.Department.DepartmentId == id)
+                    .Where(tr => tr.Department != null && tr.Department.DepartmentId == id)
                     .Select(tr => new
                     {
                         tr.TravelRequestId,
@@ -175,14 +175,14 @@ namespace TravekDesk.Controllers
                         tr.ToLocation,
                         tr.ReasonForTravel,
                         tr.CreatedOn,
-                        User = new
+                        User = tr.UserName == null ? null : new
                         {
                             tr.UserName.UserId,
                             tr.UserName.FirstName,
                             tr.UserName.LastName,
                             tr.UserName.Email
                         },
-                        Project = new
+                        Project = tr.Project == null ? null : new
                         {
                             tr.Project.ProjectId,
                             tr.Project.ProjectName

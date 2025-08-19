@@ -7,24 +7,38 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Your existing third-party packages, updated to latest stable versions -->
+    <InternalsVisibleTo Include="TravelDesk.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Security and Validation Packages -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+
+    <!-- Third-Party and Utility Packages (Updated for consistency) -->
     <PackageReference Include="itext7" Version="8.0.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="supabase-csharp" Version="0.15.0" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
 
     <!-- 
       Core Framework Packages - Aligned to a single, stable .NET 8 version (8.0.4)
-      This resolves the version conflicts that were causing the JWT validation to crash.
+      This ensures all Microsoft and Npgsql libraries are perfectly compatible.
     -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.4" />
-    
-    <!-- This package is for running 'dotnet ef' commands and is correctly configured -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <!-- Note: Microsoft.EntityFrameworkCore.Design is implicitly included by .Tools -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="**\TravelDesk.Tests\**" />
+    <EmbeddedResource Remove="**\TravelDesk.Tests\**" />
+    <None Remove="**\TravelDesk.Tests\**" />
   </ItemGroup>
 
 </Project>

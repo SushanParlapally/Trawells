@@ -65,7 +65,7 @@ namespace TravelDesk.Controllers
                 var topProjects = await _context.TravelRequests
                     .Include(tr => tr.Project)
                     .Where(tr => tr.Project != null)
-                    .GroupBy(tr => new { tr.Project.ProjectId, tr.Project.ProjectName })
+                    .GroupBy(tr => new { tr.Project!.ProjectId, tr.Project!.ProjectName })
                     .Select(g => new
                     {
                         ProjectId = g.Key.ProjectId,
@@ -116,7 +116,7 @@ namespace TravelDesk.Controllers
                                 tr.TravelRequestId,
                                 tr.Status,
                                 tr.CreatedOn,
-                                User = new
+                                User = tr.UserName == null ? null : new
                                 {
                                     tr.UserName.FirstName,
                                     tr.UserName.LastName
@@ -150,7 +150,7 @@ namespace TravelDesk.Controllers
                 var requests = await _context.TravelRequests
                     .Include(tr => tr.UserName)
                     .Include(tr => tr.Department)
-                    .Where(tr => tr.Project.ProjectId == id)
+                    .Where(tr => tr.Project != null && tr.Project.ProjectId == id)
                     .Select(tr => new
                     {
                         tr.TravelRequestId,
@@ -161,14 +161,14 @@ namespace TravelDesk.Controllers
                         tr.ToLocation,
                         tr.ReasonForTravel,
                         tr.CreatedOn,
-                        User = new
+                        User = tr.UserName == null ? null : new
                         {
                             tr.UserName.UserId,
                             tr.UserName.FirstName,
                             tr.UserName.LastName,
                             tr.UserName.Email
                         },
-                        Department = new
+                        Department = tr.Department == null ? null : new
                         {
                             tr.Department.DepartmentId,
                             tr.Department.DepartmentName

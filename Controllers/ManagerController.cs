@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +7,7 @@ using TravelDesk.Data;
 using TravelDesk.DTO;
 using TravelDesk.Models;
 using System;
+using TravelDesk.Services;
 
 namespace TravelDesk.Controllers
 {
@@ -15,10 +16,12 @@ namespace TravelDesk.Controllers
     public class ManagerController : ControllerBase
     {
         private readonly TravelDeskContext _context;
+        private readonly INotificationService _notificationService;
 
-        public ManagerController(TravelDeskContext context)
+        public ManagerController(TravelDeskContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         // GET: api/Manager/{managerId}/Requests
@@ -77,6 +80,7 @@ namespace TravelDesk.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                await _notificationService.SendTravelRequestNotificationAsync(travelRequest, "approved", "manager");
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -109,6 +113,7 @@ namespace TravelDesk.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                await _notificationService.SendTravelRequestNotificationAsync(travelRequest, "rejected", "manager");
             }
             catch (DbUpdateConcurrencyException)
             {

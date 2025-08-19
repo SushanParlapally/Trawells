@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +8,8 @@ using TravelDesk.Data;
 using TravelDesk.Models;
 using TravelDesk.DTO;
 using System;
+using TravelDesk.Services;
+using TravelDesk.DTOs;
 
 namespace TravekDesk.Controllers
 {
@@ -17,16 +19,16 @@ namespace TravekDesk.Controllers
     public class UserController : ControllerBase
     {
         private readonly TravelDeskContext _context;
-
         private readonly IConfiguration _configuration;
+        private readonly IPasswordService _passwordService;
+        private readonly INotificationService _notificationService;
 
-
-
-        public UserController(TravelDeskContext context, IConfiguration configuration)
+        public UserController(TravelDeskContext context, IConfiguration configuration, IPasswordService passwordService, INotificationService notificationService)
         {
             _context = context;
             _configuration = configuration;
-
+            _passwordService = passwordService;
+            _notificationService = notificationService;
         }
 
         [HttpGet("users")]
@@ -46,7 +48,7 @@ namespace TravekDesk.Controllers
 
         [HttpPost("users")]
         [Authorize(Roles = "Admin")]
-        public ActionResult<User> AddUser(User user)
+        public async Task<ActionResult<User>> AddUser(UserCreateDto userCreateDto)
         {
             if (!ModelState.IsValid)
             {
@@ -55,13 +57,25 @@ namespace TravekDesk.Controllers
 
             try
             {
-                // Ensure required fields are set
-                user.CreatedBy = user.CreatedBy == 0 ? 1 : user.CreatedBy;
-                user.CreatedOn = DateTime.UtcNow;
-                user.IsActive = true;
+                var user = new User
+                {
+                    FirstName = userCreateDto.FirstName,
+                    LastName = userCreateDto.LastName,
+                    Address = userCreateDto.Address,
+                    Email = userCreateDto.Email,
+                    MobileNum = userCreateDto.MobileNum,
+                    PasswordHash = _passwordService.HashPassword(userCreateDto.Password), // Hash the password
+                    RoleId = userCreateDto.RoleId,
+                    DepartmentId = userCreateDto.DepartmentId,
+                    ManagerId = userCreateDto.ManagerId,
+                    CreatedBy = 1, // Assuming default created by 1 for now, or get from claims
+                    CreatedOn = DateTime.UtcNow,
+                    IsActive = true
+                };
 
                 _context.Users.Add(user);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
+                await _notificationService.SendUserManagementNotificationAsync(user.UserId, "created", "admin");
                 return CreatedAtAction(nameof(GetUsers), new { id = user.UserId }, user);
             }
             catch (Exception ex)
@@ -71,7 +85,7 @@ namespace TravekDesk.Controllers
         }
 
         [HttpPut("users/{id}")]
-        public IActionResult UpdateUser(int id, User updateUser)
+        public async Task<IActionResult> UpdateUser(int id, User updateUser)
         {
             if (id != updateUser.UserId)
             {
@@ -92,12 +106,13 @@ namespace TravekDesk.Controllers
             // Update only specific fields
             existingUser.FirstName = updateUser.FirstName ?? existingUser.FirstName;
             existingUser.LastName = updateUser.LastName ?? existingUser.LastName;
-            existingUser.Password = updateUser.Password ?? existingUser.Password;
+            existingUser.PasswordHash = updateUser.PasswordHash ?? existingUser.PasswordHash;
             existingUser.Address = updateUser.Address ?? existingUser.Address;
 
             // Save changes
             _context.Entry(existingUser).State = EntityState.Modified;
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
+            await _notificationService.SendUserManagementNotificationAsync(existingUser.UserId, "updated", "admin");
 
             return NoContent();
         }
@@ -105,7 +120,7 @@ namespace TravekDesk.Controllers
 
 
         [HttpDelete("users/{id}")]
-        public IActionResult DeleteUser(int id)
+        public async Task<IActionResult> DeleteUser(int id)
         {
 
             var user = _context.Users.SingleOrDefault(x=>x.UserId==id && x.IsActive==true);
@@ -115,7 +130,8 @@ namespace TravekDesk.Controllers
             }
             user.IsActive= false; 
            
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
+            await _notificationService.SendUserManagementNotificationAsync(user.UserId, "deactivated", "admin");
             return NoContent();
         }
         [HttpGet("managers")]
@@ -271,7 +287,7 @@ namespace TravekDesk.Controllers
                 var activeUsers = await _context.TravelRequests
                     .Include(tr => tr.UserName)
                     .Where(tr => tr.UserName != null)
-                    .GroupBy(tr => new { tr.UserName.UserId, tr.UserName.FirstName, tr.UserName.LastName })
+                    .GroupBy(tr => new { tr.UserName!.UserId, tr.UserName!.FirstName, tr.UserName!.LastName })
                     .Select(g => new
                     {
                         UserId = g.Key.UserId,

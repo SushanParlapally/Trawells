@@ -10,6 +10,9 @@ using System.Text.Json.Serialization;
 using TravelDesk.Interface;
 using TravelDesk.Models;
 using TravelDesk.Service;
+using FluentValidation;
+using TravelDesk.Hubs;
+using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,10 +70,20 @@ builder.Services.AddDbContext<TravelDeskContext>(options =>
     });
 });
 
+// Add Security Services
+builder.Services.AddScoped<TravelDesk.Services.IPasswordService, TravelDesk.Services.PasswordService>();
+
+// Add FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<TravelDesk.Validators.UserCreateDtoValidator>();
+
 // Add Application Services
 builder.Services.AddScoped<ISupabaseStorageService, SupabaseStorageService>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHttpContextAccessor();
+
+// Add SignalR
+builder.Services.AddSignalR();
 
 // Add CORS support
 builder.Services.AddCors(options =>
@@ -124,5 +137,13 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();
+
+// --- THIS IS THE CRITICAL FIX FOR INTEGRATION TESTING ---
+// By explicitly defining a public partial class Program at the END of the file,
+// we make the application's entry point visible to the external TravelDesk.Tests project
+// while still respecting the "top-level statements" C# language rule.
+public partial class Program { }
+// --- END OF FIX ---
