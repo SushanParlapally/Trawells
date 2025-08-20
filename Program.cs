@@ -13,6 +13,7 @@ using TravelDesk.Service;
 using FluentValidation;
 using TravelDesk.Hubs;
 using Microsoft.AspNetCore.Http;
+using TravelDesk.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,6 +79,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<TravelDesk.Validators.UserC
 
 // Add Application Services
 builder.Services.AddScoped<ISupabaseStorageService, SupabaseStorageService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddHttpContextAccessor();
