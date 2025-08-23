@@ -129,8 +129,13 @@ using (var scope = app.Services.CreateScope())
 }
 
 // --- HTTP Request Pipeline ---
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseStaticFiles();
 
 app.MapMethods("/", new[] { "GET", "HEAD" }, () => "TravelDesk API is running! Visit /swagger for API documentation.");
 app.MapMethods("/health", new[] { "GET", "HEAD" }, () => new { status = "healthy", timestamp = DateTime.UtcNow });
@@ -140,6 +145,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<NotificationHub>("/notificationHub");
+
+app.MapFallbackToFile("index.html");
 
 app.Run();
 

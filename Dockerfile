@@ -1,35 +1,30 @@
-# Use the official ASP.NET Core runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /app
-EXPOSE 8080
-
-# Use the official ASP.NET Core SDK image for building
+# Stage 1: Build Backend
+# This stage compiles the C# application.
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy the project file and restore dependencies
-COPY ["TravelDesk.csproj", "./"]
-RUN dotnet restore "TravelDesk.csproj"
+# Copy solution and project files first to leverage Docker layer caching
+COPY TravelDesk.sln .
+COPY TravelDesk.csproj .
+COPY TravelDesk.Tests/TravelDesk.Tests.csproj ./TravelDesk.Tests/
+
+# Restore NuGet packages for the entire solution
+RUN dotnet restore "TravelDesk.sln"
 
 # Copy the rest of the source code
 COPY . .
-RUN dotnet build "TravelDesk.csproj" -c Release -o /app/build
 
-# Publish the application
-FROM build AS publish
-RUN dotnet publish "TravelDesk.csproj" -c Release -o /app/publish
+# Publish the application, creating a release-optimized build
+RUN dotnet publish "TravelDesk.csproj" -c Release -o /app/publish --no-restore
 
-# Build the final runtime image
-FROM base AS final
+# Stage 2: Final Backend Image
+# This stage creates the final, lean image with only the compiled application and runtime.
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 
-# Set environment variables for Render.io
-ENV ASPNETCORE_URLS=http://0.0.0.0:8080
-ENV ASPNETCORE_ENVIRONMENT=Production
-
-# Expose port 8080
+# Expose the port the application will run on
 EXPOSE 8080
 
-# Start the application
-ENTRYPOINT ["dotnet", "TravelDesk.dll"] 
+# Define the command to run the application
+ENTRYPOINT ["dotnet", "TravelDesk.dll"]
