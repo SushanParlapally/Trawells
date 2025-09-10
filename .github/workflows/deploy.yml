@@ -11,7 +11,7 @@ on:
 env:
   DOTNET_VERSION: '8.0.x'
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/travel-desk-backend
+  IMAGE_NAME: sushanparlapally/trawells/travel-desk-backend
 
 jobs:
   test:
@@ -70,7 +70,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          dockerfile: ./Dockerfile
+          file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
