@@ -81,10 +81,17 @@ namespace TravelDesk.Controllers
 
                 Console.WriteLine($"Successfully retrieved {travelRequests.Count} travel requests");
 
+                                var totalUsers = await _context.Users.CountAsync();
+                var totalDepartments = await _context.Departments.CountAsync();
+                var totalProjects = await _context.Projects.CountAsync();
+
                 var dashboard = new DashboardDto
                 {
                     TotalRequests = travelRequests.Count,
                     PendingRequests = travelRequests.Count(tr => tr.Status == "Pending"),
+                    TotalUsers = totalUsers,
+                    TotalDepartments = totalDepartments,
+                    TotalProjects = totalProjects,
                     Requests = travelRequests
                 };
 
